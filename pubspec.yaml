@@ -30,7 +30,17 @@ melos:
       run: dart format .
     dew:
       description: >-
-        Run the Dew CLI. Pass subcommands and args directly
-        (e.g. melos run dew kanban). Use 'help <command>' for usage
-        (e.g. melos run dew help kanban).
+        Run the Dew CLI via 'dart run' (for development). Pass subcommands and
+        args directly (e.g. melos run dew kanban). Use 'help <command>' for
+        usage (e.g. melos run dew help kanban).
+        NOTE: 'mcp serve' must be run via the compiled binary (see compile
+        script) because melos pollutes stdout, which breaks the stdio MCP
+        transport.
       run: dart run packages/cli/bin/dew.dart
+    compile:
+      description: >-
+        Compile the Dew CLI to a native binary at .project/toolchain/bin/dew
+        (.project/toolchain/bin/dew.exe on Windows). Use the compiled binary to
+        run 'dew mcp serve' from your MCP client config — this keeps stdout
+        clean for the JSON-RPC channel.
+      run: dart compile exe packages/cli/bin/dew.dart -o .project/toolchain/bin/dew
