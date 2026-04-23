@@ -1,0 +1,29 @@
+name: dew_workspace
+description: A Dart workspace for the dew project management tool.
+version: 0.1.0
+# repository: https://github.com/my_org/my_repo
+publish_to: none
+
+environment:
+  sdk: ^3.11.4
+
+workspace:
+  - packages/cli
+  - packages/core
+  - packages/kanban
+
+dev_dependencies:
+  lints: ^6.0.0
+  melos: ^7.0.0
+
+melos:
+  scripts:
+    analyze:
+      description: Run static analysis across workspace packages.
+      run: melos exec --fail-fast -- dart analyze
+    test:
+      description: Run package tests across workspace packages that define tests.
+      run: melos exec --fail-fast --dir-exists=test -- dart test
+    format:
+      description: Format the workspace.
+      run: dart format .

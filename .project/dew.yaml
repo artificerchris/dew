@@ -1,0 +1,27 @@
+dew:
+  mcp:
+    host: "localhost"
+    port: 8080
+  kanban:
+    prefix: "DEW"
+    ticket_types:
+      - id: "epic"
+        name: "Epic"
+      - id: "story"
+        name: "Story"
+      - id: "task"
+        name: "Task"
+      - id: "bug"
+        name: "Bug"
+      - id: "spike"
+        name: "Spike"
+    columns:
+      - id: "todo"
+        name: "To Do"
+        color: "blue"
+      - id: "in-progress"
+        name: "In Progress"
+        color: "yellow"
+      - id: "done"
+        name: "Done"
+        color: "green"
