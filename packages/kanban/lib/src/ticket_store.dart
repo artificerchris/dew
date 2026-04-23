@@ -16,7 +16,8 @@ class TicketStore {
     required String column,
     String body = '',
   }) async {
-    await Directory(kanbanDir).create(recursive: true);
+    final columnDir = Directory(p.join(kanbanDir, column));
+    await columnDir.create(recursive: true);
     final id = _formatId(await _nextNumber());
     final ticket = Ticket(
       id: id,
@@ -27,14 +28,14 @@ class TicketStore {
       body: body,
       comments: const [],
     );
-    await File(_filePath(id)).writeAsString(ticket.toFileContent());
+    await File(p.join(columnDir.path, '$id.md')).writeAsString(ticket.toFileContent());
     return ticket;
   }
 
   Future<Ticket?> findById(String id) async {
-    final file = File(_filePath(id));
-    if (!await file.exists()) return null;
-    return Ticket.fromFileContent(id, await file.readAsString());
+    final found = await _findTicketFile(id);
+    if (found == null) return null;
+    return Ticket.fromFileContent(id, await found.file.readAsString(), found.column);
   }
 
   Future<List<Ticket>> list() async {
@@ -43,11 +44,15 @@ class TicketStore {
     final pattern = RegExp(r'^' + RegExp.escape(prefix) + r'-\d{4}\.md$');
     final tickets = <Ticket>[];
     await for (final entity in dir.list()) {
-      final name = p.basename(entity.path);
-      if (pattern.hasMatch(name)) {
+      if (entity is! Directory) continue;
+      final col = p.basename(entity.path);
+      if (col == 'archive' || col == 'attachments') continue;
+      await for (final file in entity.list()) {
+        if (file is! File) continue;
+        final name = p.basename(file.path);
+        if (!pattern.hasMatch(name)) continue;
         final id = p.basenameWithoutExtension(name);
-        final ticket = await findById(id);
-        if (ticket != null) tickets.add(ticket);
+        tickets.add(Ticket.fromFileContent(id, await file.readAsString(), col));
       }
     }
     tickets.sort((a, b) => a.id.compareTo(b.id));
@@ -55,12 +60,11 @@ class TicketStore {
   }
 
   Future<Ticket> addComment(String id, String comment) async {
-    final ticket = await findById(id);
-    if (ticket == null) throw ArgumentError('Ticket $id not found.');
-    final updated = ticket.copyWith(
-      comments: [...ticket.comments, comment],
-    );
-    await File(_filePath(id)).writeAsString(updated.toFileContent());
+    final found = await _findTicketFile(id);
+    if (found == null) throw ArgumentError('Ticket $id not found.');
+    final ticket = Ticket.fromFileContent(id, await found.file.readAsString(), found.column);
+    final updated = ticket.copyWith(comments: [...ticket.comments, comment]);
+    await found.file.writeAsString(updated.toFileContent());
     return updated;
   }
 
@@ -81,7 +85,8 @@ class TicketStore {
       final updated = ticket.copyWith(
         links: [...ticket.links, TicketLink(targetId: targetId, type: type)],
       );
-      await File(_filePath(id)).writeAsString(updated.toFileContent());
+      final found = (await _findTicketFile(id))!;
+      await found.file.writeAsString(updated.toFileContent());
     }
 
     // Inverse link on the target.
@@ -90,29 +95,34 @@ class TicketStore {
       final updatedTarget = target.copyWith(
         links: [...target.links, TicketLink(targetId: id, type: inverseType)],
       );
-      await File(_filePath(targetId)).writeAsString(updatedTarget.toFileContent());
+      final foundTarget = (await _findTicketFile(targetId))!;
+      await foundTarget.file.writeAsString(updatedTarget.toFileContent());
     }
 
     return (await findById(id))!;
   }
 
   Future<Ticket> unlinkTickets(String id, String targetId) async {
-    final ticket = await findById(id);
-    if (ticket == null) throw ArgumentError('Ticket $id not found.');
-
-    // Remove forward link.
+    final found = await _findTicketFile(id);
+    if (found == null) throw ArgumentError('Ticket $id not found.');
+    final ticket = Ticket.fromFileContent(id, await found.file.readAsString(), found.column);
     final updated = ticket.copyWith(
       links: ticket.links.where((l) => l.targetId != targetId).toList(),
     );
-    await File(_filePath(id)).writeAsString(updated.toFileContent());
+    await found.file.writeAsString(updated.toFileContent());
 
     // Remove inverse link on target (if it exists).
-    final target = await findById(targetId);
-    if (target != null) {
+    final foundTarget = await _findTicketFile(targetId);
+    if (foundTarget != null) {
+      final target = Ticket.fromFileContent(
+        targetId,
+        await foundTarget.file.readAsString(),
+        foundTarget.column,
+      );
       final updatedTarget = target.copyWith(
         links: target.links.where((l) => l.targetId != id).toList(),
       );
-      await File(_filePath(targetId)).writeAsString(updatedTarget.toFileContent());
+      await foundTarget.file.writeAsString(updatedTarget.toFileContent());
     }
 
     return (await findById(id))!;
@@ -137,22 +147,43 @@ class TicketStore {
     String? column,
     String? body,
   }) async {
-    final ticket = await findById(id);
-    if (ticket == null) throw ArgumentError('Ticket $id not found.');
-    final updated = ticket.copyWith(
-      title: title,
-      type: type,
-      column: column,
-      body: body,
-    );
-    await File(_filePath(id)).writeAsString(updated.toFileContent());
+    final found = await _findTicketFile(id);
+    if (found == null) throw ArgumentError('Ticket $id not found.');
+    final ticket = Ticket.fromFileContent(id, await found.file.readAsString(), found.column);
+    final updated = ticket.copyWith(title: title, type: type, column: column, body: body);
+    if (column != null && column != ticket.column) {
+      // Column changed — move the file to the new column directory.
+      await found.file.delete();
+      final newColDir = Directory(p.join(kanbanDir, column));
+      await newColDir.create(recursive: true);
+      await File(p.join(newColDir.path, '$id.md')).writeAsString(updated.toFileContent());
+    } else {
+      await found.file.writeAsString(updated.toFileContent());
+    }
     return updated;
   }
 
   Future<void> delete(String id) async {
-    final file = File(_filePath(id));
-    if (!await file.exists()) throw ArgumentError('Ticket $id not found.');
-    await file.delete();
+    final found = await _findTicketFile(id);
+    if (found == null) throw ArgumentError('Ticket $id not found.');
+    await found.file.delete();
+    // Clean up per-ticket attachment directory if present.
+    final attachmentsDir = Directory(p.join(kanbanDir, 'attachments', id));
+    if (await attachmentsDir.exists()) await attachmentsDir.delete(recursive: true);
+  }
+
+  /// Searches all column subdirectories (one level deep) for a ticket file.
+  /// Skips the [attachments] directory. Includes [archive].
+  Future<({File file, String column})?> _findTicketFile(String id) async {
+    final dir = Directory(kanbanDir);
+    if (!await dir.exists()) return null;
+    await for (final entity in dir.list()) {
+      if (entity is! Directory) continue;
+      if (p.basename(entity.path) == 'attachments') continue;
+      final file = File(p.join(entity.path, '$id.md'));
+      if (await file.exists()) return (file: file, column: p.basename(entity.path));
+    }
+    return null;
   }
 
   Future<int> _nextNumber() async {
@@ -161,16 +192,17 @@ class TicketStore {
     final pattern = RegExp(r'^' + RegExp.escape(prefix) + r'-(\d+)\.md$');
     var max = 0;
     await for (final entity in dir.list()) {
-      final match = pattern.firstMatch(p.basename(entity.path));
-      if (match != null) {
-        final n = int.parse(match.group(1)!);
-        if (n > max) max = n;
+      if (entity is! Directory || p.basename(entity.path) == 'attachments') continue;
+      await for (final file in entity.list()) {
+        final match = pattern.firstMatch(p.basename(file.path));
+        if (match != null) {
+          final n = int.parse(match.group(1)!);
+          if (n > max) max = n;
+        }
       }
     }
     return max + 1;
   }
 
   String _formatId(int n) => '$prefix-${n.toString().padLeft(4, '0')}';
-
-  String _filePath(String id) => p.join(kanbanDir, '$id.md');
 }

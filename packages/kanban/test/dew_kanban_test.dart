@@ -139,7 +139,7 @@ dew:
         body: 'Some body.',
         comments: ['First comment.', 'Second comment.'],
       );
-      final parsed = Ticket.fromFileContent(t.id, t.toFileContent());
+      final parsed = Ticket.fromFileContent(t.id, t.toFileContent(), t.column);
       expect(parsed.id, t.id);
       expect(parsed.title, t.title);
       expect(parsed.type, t.type);
@@ -159,7 +159,7 @@ dew:
         body: '',
         comments: const [],
       );
-      final parsed = Ticket.fromFileContent(t.id, t.toFileContent());
+      final parsed = Ticket.fromFileContent(t.id, t.toFileContent(), t.column);
       expect(parsed.body, '');
       expect(parsed.comments, isEmpty);
     });
@@ -178,7 +178,7 @@ dew:
           TicketLink(targetId: 'TEST-0002', type: 'relates_to'),
         ],
       );
-      final parsed = Ticket.fromFileContent(t.id, t.toFileContent());
+      final parsed = Ticket.fromFileContent(t.id, t.toFileContent(), t.column);
       expect(parsed.links, hasLength(2));
       expect(parsed.links[0].targetId, 'TEST-0001');
       expect(parsed.links[0].type, 'blocks');

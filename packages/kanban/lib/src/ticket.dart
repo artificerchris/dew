@@ -71,6 +71,9 @@ class Ticket {
 
   /// Serialises the ticket to markdown with YAML frontmatter.
   ///
+  /// The column is intentionally omitted — it is derived from the containing
+  /// directory name and would be redundant (and stale after a move).
+  ///
   /// Format:
   /// ```
   /// ---
@@ -89,9 +92,8 @@ class Ticket {
     final buf = StringBuffer();
     buf.writeln('---');
     buf.writeln('id: $id');
-    buf.writeln('title: $title');
+    buf.writeln('title: ${_yamlQuote(title)}');
     buf.writeln('type: $type');
-    buf.writeln('column: $column');
     buf.writeln('created: ${created.toUtc().toIso8601String()}');
     if (links.isNotEmpty) {
       buf.writeln('links:');
@@ -114,7 +116,9 @@ class Ticket {
     return buf.toString();
   }
 
-  static Ticket fromFileContent(String id, String content) {
+  /// Parses a ticket from file content. [column] must be supplied by the
+  /// caller (derived from the containing directory name).
+  static Ticket fromFileContent(String id, String content, String column) {
     if (!content.startsWith('---\n')) {
       throw FormatException('Ticket file $id does not start with ---');
     }
@@ -146,12 +150,25 @@ class Ticket {
       id: id,
       title: fm['title'] as String,
       type: fm['type'] as String,
-      column: fm['column'] as String,
+      column: column,
       created: DateTime.parse(fm['created'] as String),
       body: sections.isNotEmpty ? sections[0] : '',
       comments: sections.length > 1 ? sections.sublist(1) : const [],
       links: links,
     );
+  }
+
+  /// Wraps [value] in double quotes if it contains characters that would
+  /// confuse a YAML parser (colon-space, leading/trailing whitespace, etc.).
+  static String _yamlQuote(String value) {
+    final needsQuoting = value.contains(': ') ||
+        value.contains(' #') ||
+        value.startsWith('"') ||
+        value.startsWith("'") ||
+        value.startsWith(' ') ||
+        value.endsWith(' ');
+    if (!needsQuoting) return value;
+    return '"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"';
   }
 }
 
