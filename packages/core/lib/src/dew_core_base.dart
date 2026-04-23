@@ -1,6 +1,8 @@
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 
+import 'init.dart';
+
 typedef McpToolHandler = Future<String> Function(Map<String, dynamic> args);
 
 /// A single tool exposed to an MCP client.
@@ -136,12 +138,19 @@ mixin DewToolCommand on DewCommand {
 /// [CommandRunner].
 class CommandRegistry {
   final List<DewCommand> _commands = [];
+  final List<DewInitHook> _initHooks = [];
 
   /// Adds [command] to the registry.
   void register(DewCommand command) => _commands.add(command);
 
+  /// Registers an [DewInitHook] to be called during `dew init`.
+  void registerInitHook(DewInitHook hook) => _initHooks.add(hook);
+
   /// An unmodifiable view of all registered commands.
   List<DewCommand> get commands => List.unmodifiable(_commands);
+
+  /// An unmodifiable view of all registered init hooks.
+  List<DewInitHook> get initHooks => List.unmodifiable(_initHooks);
 
   /// Collects all [McpTool]s from commands that mix in [DewToolCommand],
   /// recursively including subcommands.

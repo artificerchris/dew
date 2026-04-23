@@ -11,6 +11,7 @@ Future<void> main(List<String> args) async {
 
   final runner = CommandRunner<void>('dew', 'A project management tool.');
 
+  runner.addCommand(InitCommand(commandRegistry.initHooks));
   for (final command in commandRegistry.commands) {
     runner.addCommand(command);
   }
