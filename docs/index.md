@@ -15,11 +15,29 @@ Welcome to the documentation for the Dew project management tool!
 
 Dew is structured as a Dart workspace with the following packages:
 
-| Package           | Description                                                                                |
-| ----------------- | ------------------------------------------------------------------------------------------ |
-| `packages/cli`    | The `dew` command-line tool. Wires all packages together at startup.                       |
-| `packages/core`   | Shared types (tickets, columns, config) and the `McpToolProvider` interface.               |
-| `packages/kanban` | Kanban board logic. Implements `McpToolProvider` to expose its tools to the MCP server.    |
-| `packages/mcp`    | The MCP server. Depends on `core`; collects and serves registered tools from all packages. |
+| Package           | Description                                                                                     |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| `packages/cli`    | The `dew` command-line tool. Wires all packages together at startup.                            |
+| `packages/core`   | Shared foundation: `DewCommand`, `DewToolCommand` mixin, `CommandRegistry`, and `DewConfig`.    |
+| `packages/kanban` | Kanban board logic. Each command automatically registers itself as an MCP tool.                 |
+| `packages/mcp`    | The MCP server. Collects tools from `CommandRegistry` and serves them over stdio.               |
 
-`kanban` (and future feature packages) depend only on `core` — not on `mcp` — keeping them usable independently of the AI integration layer. The `cli` package is the only one that depends on `mcp` and is responsible for starting the server and registering all providers.
+### How commands become MCP tools
+
+Every CLI command that mixes in `DewToolCommand` is automatically registered as an MCP tool — no separate registration needed. The mixin derives the JSON Schema for the tool's input from the command's own `ArgParser`, so argument definitions are written exactly once.
+
+```
+ArgParser definition
+      │
+      ├─► dew kanban create   (human CLI)
+      └─► kanban_create_ticket (MCP tool with schema)
+```
+
+### Config architecture
+
+`DewConfig` in `core` is a thin wrapper around the raw YAML map. Feature packages add typed accessors via Dart extensions:
+
+- `dew_kanban` defines `KanbanDewConfig` — exposes `context.config.kanban`
+- `dew_mcp` defines `McpDewConfig` — exposes `context.config.mcp`
+
+This keeps feature-specific config classes out of `core` while leaving all call sites unchanged.

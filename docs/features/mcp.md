@@ -6,8 +6,12 @@ The Dew Model Context Protocol (MCP) Server is a feature that allows AI agents t
 
 The MCP feature is split across two packages to keep concerns separate:
 
-- **`packages/core`** defines the `McpToolProvider` interface. Any feature package that wants to expose tools to AI agents implements this interface — without needing to depend on the MCP server itself.
-- **`packages/mcp`** implements the actual server. It collects all registered `McpToolProvider` implementations and serves them over stdio using the [dart\_mcp](https://pub.dev/packages/dart_mcp) package. Only the `cli` package depends on `packages/mcp`; feature packages like `kanban` remain decoupled from the transport layer.
+- **`packages/core`** defines the `DewToolCommand` mixin. Any command that mixes it in is automatically
+  registered as an MCP tool — the mixin derives the tool's JSON Schema directly from the command's own
+  `ArgParser`, so tools and CLI commands share a single definition.
+- **`packages/mcp`** implements the actual server. It reads the list of tools from `CommandRegistry` and
+  serves them over stdio using the [dart\_mcp](https://pub.dev/packages/dart_mcp) package. Only the `cli`
+  package depends on `packages/mcp`; feature packages like `kanban` remain decoupled from the transport layer.
 
 ## Configuration
 
@@ -55,10 +59,32 @@ The server logs its startup message to **stderr** so it never interferes with th
 
 The following tools are registered by the `kanban` package:
 
-| Tool                      | Description                                              |
-| ------------------------- | -------------------------------------------------------- |
-| `kanban_create_ticket`    | Create a new kanban ticket                               |
-| `kanban_list_tickets`     | List tickets, optionally filtered by column or type      |
-| `kanban_get_ticket`       | Get a ticket by ID                                       |
-| `kanban_update_ticket`    | Update one or more fields on an existing ticket          |
-| `kanban_delete_ticket`    | Delete a ticket by ID                                    |
+| Tool                      | Description                                                             |
+| ------------------------- | ----------------------------------------------------------------------- |
+| `kanban_create_ticket`    | Create a new kanban ticket                                              |
+| `kanban_list_tickets`     | List tickets, optionally filtered by column or type                     |
+| `kanban_get_ticket`       | Get details of a specific ticket by ID                                  |
+| `kanban_update_ticket`    | Update one or more fields on an existing ticket                         |
+| `kanban_delete_ticket`    | Delete a ticket permanently (also removes its attachment directory)     |
+| `kanban_move_ticket`      | Move a ticket to a different column                                     |
+| `kanban_search_tickets`   | Full-text search across ticket titles, bodies, and comments             |
+| `kanban_add_comment`      | Append a comment to a ticket                                            |
+| `kanban_get_config`       | Return the current kanban config (columns, types, prefix)               |
+| `kanban_stats`            | Show ticket counts grouped by column and type                           |
+| `kanban_link_tickets`     | Link two tickets with a typed relationship (bidirectional)              |
+| `kanban_unlink_tickets`   | Remove a link between two tickets (both sides)                          |
+
+### Link types
+
+`kanban_link_tickets` requires a `--type` argument. The inverse is written automatically on the target ticket.
+
+| Type              | Inverse           | Symmetric? |
+| ----------------- | ----------------- | ---------- |
+| `blocks`          | `is_blocked_by`   | No         |
+| `is_blocked_by`   | `blocks`          | No         |
+| `relates_to`      | `relates_to`      | Yes        |
+| `duplicates`      | `is_duplicated_by`| No         |
+| `is_duplicated_by`| `duplicates`      | No         |
+| `parent_of`       | `child_of`        | No         |
+| `child_of`        | `parent_of`       | No         |
+

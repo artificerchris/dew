@@ -34,11 +34,11 @@ dew:
         name: "Spike"
 
     columns:            # Ordered list of columns on your Kanban board
-      - id: "todo"
-        name: "To Do"
+      - id: "backlog"
+        name: "Backlog"
         color: "blue"
-      - id: "in-progress"
-        name: "In Progress"
+      - id: "doing"
+        name: "Doing"
         color: "yellow"
       - id: "done"
         name: "Done"
