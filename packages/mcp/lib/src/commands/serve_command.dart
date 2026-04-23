@@ -21,21 +21,17 @@ class ServeCommand extends DewCommand {
 
   @override
   Future<void> run() async {
-    final context = await ProjectContext.find();
     final tools = _toolRegistry.allTools;
 
     io.stderr.writeln(
-      'Dew MCP server starting — '
-      '${tools.length} tool(s) registered, '
-      'project root: ${context.root}',
+      'Dew MCP server starting — ${tools.length} tool(s) registered.',
     );
 
+    // stdioChannel subscribes to stdin; do not touch stdin after this point.
+    // The Dart event loop keeps the process alive until the client disconnects.
     DewMcpServer(
       stdioChannel(input: io.stdin, output: io.stdout),
       tools,
     );
-
-    // Keep the process alive until the MCP client closes the connection.
-    await io.stdin.drain<void>();
   }
 }
