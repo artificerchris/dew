@@ -64,6 +64,40 @@ class TicketStore {
     return updated;
   }
 
+  Future<Ticket> linkTickets(String id, String targetId) async {
+    final ticket = await findById(id);
+    if (ticket == null) throw ArgumentError('Ticket $id not found.');
+    if (await findById(targetId) == null) {
+      throw ArgumentError('Ticket $targetId not found.');
+    }
+    if (ticket.links.contains(targetId)) return ticket;
+    final updated = ticket.copyWith(links: [...ticket.links, targetId]);
+    await File(_filePath(id)).writeAsString(updated.toFileContent());
+    return updated;
+  }
+
+  Future<Ticket> unlinkTickets(String id, String targetId) async {
+    final ticket = await findById(id);
+    if (ticket == null) throw ArgumentError('Ticket $id not found.');
+    final updated = ticket.copyWith(
+      links: ticket.links.where((l) => l != targetId).toList(),
+    );
+    await File(_filePath(id)).writeAsString(updated.toFileContent());
+    return updated;
+  }
+
+  /// Returns counts of tickets grouped by column and type.
+  Future<Map<String, dynamic>> stats() async {
+    final tickets = await list();
+    final byColumn = <String, int>{};
+    final byType = <String, int>{};
+    for (final t in tickets) {
+      byColumn[t.column] = (byColumn[t.column] ?? 0) + 1;
+      byType[t.type] = (byType[t.type] ?? 0) + 1;
+    }
+    return {'total': tickets.length, 'byColumn': byColumn, 'byType': byType};
+  }
+
   Future<Ticket> update(
     String id, {
     String? title,

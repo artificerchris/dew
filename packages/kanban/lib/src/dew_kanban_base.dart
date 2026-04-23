@@ -5,8 +5,12 @@ import 'commands/create_command.dart';
 import 'commands/delete_command.dart';
 import 'commands/get_command.dart';
 import 'commands/get_config_command.dart';
+import 'commands/link_command.dart';
 import 'commands/list_command.dart';
+import 'commands/move_command.dart';
 import 'commands/search_command.dart';
+import 'commands/stats_command.dart';
+import 'commands/unlink_command.dart';
 import 'commands/update_command.dart';
 
 /// Top-level CLI command for all Kanban board operations.
@@ -17,9 +21,13 @@ class KanbanCommand extends DewCommand {
     addSubcommand(GetCommand());
     addSubcommand(UpdateCommand());
     addSubcommand(DeleteCommand());
+    addSubcommand(MoveCommand());
     addSubcommand(SearchCommand());
     addSubcommand(AddCommentCommand());
     addSubcommand(GetConfigCommand());
+    addSubcommand(StatsCommand());
+    addSubcommand(LinkCommand());
+    addSubcommand(UnlinkCommand());
   }
 
   @override

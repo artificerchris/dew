@@ -9,6 +9,9 @@ class Ticket {
   final String body;
   final List<String> comments;
 
+  /// IDs of tickets this ticket is linked to (e.g. dependencies).
+  final List<String> links;
+
   const Ticket({
     required this.id,
     required this.title,
@@ -17,6 +20,7 @@ class Ticket {
     required this.created,
     required this.body,
     required this.comments,
+    this.links = const [],
   });
 
   Ticket copyWith({
@@ -25,6 +29,7 @@ class Ticket {
     String? column,
     String? body,
     List<String>? comments,
+    List<String>? links,
   }) => Ticket(
     id: id,
     title: title ?? this.title,
@@ -33,6 +38,7 @@ class Ticket {
     created: created,
     body: body ?? this.body,
     comments: comments ?? this.comments,
+    links: links ?? this.links,
   );
 
   /// Serialises the ticket to markdown with YAML frontmatter.
@@ -59,6 +65,12 @@ class Ticket {
     buf.writeln('type: $type');
     buf.writeln('column: $column');
     buf.writeln('created: ${created.toUtc().toIso8601String()}');
+    if (links.isNotEmpty) {
+      buf.writeln('links:');
+      for (final link in links) {
+        buf.writeln('  - $link');
+      }
+    }
     buf.writeln('---');
     if (body.isNotEmpty) {
       buf.writeln();
@@ -97,6 +109,7 @@ class Ticket {
       created: DateTime.parse(fm['created'] as String),
       body: sections.isNotEmpty ? sections[0] : '',
       comments: sections.length > 1 ? sections.sublist(1) : const [],
+      links: (fm['links'] as YamlList?)?.cast<String>().toList() ?? const [],
     );
   }
 }
