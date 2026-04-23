@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "dew": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/.project/toolchain/bin/dew",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
