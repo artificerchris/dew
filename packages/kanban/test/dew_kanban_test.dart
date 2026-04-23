@@ -139,5 +139,73 @@ void main() {
       );
     });
   });
+
+  group('KanbanToolProvider', () {
+    test('exposes five tools with unique names', () {
+      final provider = KanbanToolProvider();
+      expect(provider.tools, hasLength(5));
+      final names = provider.tools.map((t) => t.name).toSet();
+      expect(names, {
+        'kanban_create_ticket',
+        'kanban_list_tickets',
+        'kanban_get_ticket',
+        'kanban_update_ticket',
+        'kanban_delete_ticket',
+      });
+    });
+
+    test('all tools have non-empty descriptions and object inputSchema', () {
+      for (final tool in KanbanToolProvider().tools) {
+        expect(tool.description, isNotEmpty, reason: '${tool.name} description');
+        expect(tool.inputSchema['type'], 'object',
+            reason: '${tool.name} schema type');
+      }
+    });
+
+    test('create and list tools have handlers that work', () async {
+      // Use a real temp dir with a fake dew.yaml so ProjectContext.find()
+      // resolves — handlers call ProjectContext.find() internally.
+      final tempDir = await Directory.systemTemp.createTemp('kanban_tool_test_');
+      final origDir = Directory.current;
+      try {
+        await Directory(p.join(tempDir.path, '.project', 'kanban')).create(recursive: true);
+        await File(p.join(tempDir.path, '.project', 'dew.yaml')).writeAsString('''
+dew:
+  mcp:
+    host: localhost
+    port: 9090
+  kanban:
+    prefix: T
+    ticket_types:
+      - id: task
+        name: Task
+    columns:
+      - id: todo
+        name: To Do
+        color: blue
+''');
+        Directory.current = tempDir;
+        final provider = KanbanToolProvider();
+
+        final createTool = provider.tools.firstWhere(
+          (t) => t.name == 'kanban_create_ticket',
+        );
+        final result = await createTool.handler({
+          'title': 'Hello',
+          'type': 'task',
+        });
+        expect(result, contains('T-0001'));
+
+        final listTool = provider.tools.firstWhere(
+          (t) => t.name == 'kanban_list_tickets',
+        );
+        final listResult = await listTool.handler({});
+        expect(listResult, contains('T-0001'));
+      } finally {
+        Directory.current = origDir;
+        await tempDir.delete(recursive: true);
+      }
+    });
+  });
 }
 

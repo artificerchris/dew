@@ -1,6 +1,7 @@
 library;
 
 export 'src/dew_kanban_base.dart';
+export 'src/kanban_tool_provider.dart';
 export 'src/ticket.dart';
 export 'src/ticket_store.dart';
 
