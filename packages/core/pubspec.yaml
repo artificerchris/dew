@@ -1,5 +1,5 @@
 name: dew_core
-description: A starting point for Dart libraries or applications.
+description: Core shared types, interfaces, and configuration for the Dew project management tool.
 version: 1.0.0
 # repository: https://github.com/my_org/my_repo
 publish_to: none
@@ -10,6 +10,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
+  args: ^2.7.0
   path: ^1.9.0
 
 dev_dependencies:

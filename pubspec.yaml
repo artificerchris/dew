@@ -11,6 +11,7 @@ workspace:
   - packages/cli
   - packages/core
   - packages/kanban
+  - packages/mcp
 
 dev_dependencies:
   lints: ^6.0.0
@@ -27,3 +28,9 @@ melos:
     format:
       description: Format the workspace.
       run: dart format .
+    dew:
+      description: >-
+        Run the Dew CLI. Pass subcommands and args directly
+        (e.g. melos run dew kanban). Use 'help <command>' for usage
+        (e.g. melos run dew help kanban).
+      run: dart run packages/cli/bin/dew.dart

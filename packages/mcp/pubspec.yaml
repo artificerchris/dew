@@ -1,5 +1,5 @@
-name: dew_kanban
-description: Kanban board feature for the Dew project management tool. Implements McpToolProvider to expose board tools to the MCP server.
+name: dew_mcp
+description: MCP server for the Dew project management tool. Collects and serves tools registered by feature packages via the McpToolProvider interface.
 version: 1.0.0
 # repository: https://github.com/my_org/my_repo
 publish_to: none
@@ -12,7 +12,6 @@ environment:
 dependencies:
   dew_core:
     path: ../core
-  path: ^1.9.0
 
 dev_dependencies:
   lints: ^6.0.0

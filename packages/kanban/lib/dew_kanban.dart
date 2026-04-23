@@ -1,8 +1,11 @@
-/// Support for doing something awesome.
-///
-/// More dartdocs go here.
 library;
 
 export 'src/dew_kanban_base.dart';
 
-// TODO: Export any libraries intended for clients of this package.
+import 'package:dew_core/dew_core.dart';
+import 'package:dew_kanban/src/dew_kanban_base.dart';
+
+/// Registers all Kanban commands into [registry].
+void registerCommands(CommandRegistry registry) {
+  registry.register(KanbanCommand());
+}

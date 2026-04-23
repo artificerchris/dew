@@ -1,6 +1,13 @@
-// TODO: Put public facing types in this file.
+import 'package:dew_core/dew_core.dart';
 
-/// Checks if you are awesome. Spoiler: you are.
-class Awesome {
-  bool get isAwesome => true;
+/// Top-level CLI command for all Kanban board operations.
+class KanbanCommand extends DewCommand {
+  @override
+  final String name = 'kanban';
+
+  @override
+  final String description = 'Manage the Kanban board.';
+
+  @override
+  Future<void> run() async => printUsage();
 }
