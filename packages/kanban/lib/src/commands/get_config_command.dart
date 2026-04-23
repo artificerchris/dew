@@ -1,4 +1,5 @@
 import 'package:dew_core/dew_core.dart';
+import '../kanban_config.dart';
 
 class GetConfigCommand extends DewCommand with DewToolCommand {
   @override

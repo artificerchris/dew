@@ -69,13 +69,12 @@ dew:
       await tempDir.delete(recursive: true);
     });
 
-    test('find() loads config from .project/dew.yaml', () async {
+    test('find() loads config and exposes raw yaml', () async {
       final ctx = await ProjectContext.find();
-      expect(ctx.config.kanban.prefix, 'TEST');
-      expect(ctx.config.kanban.ticketTypes, hasLength(1));
-      expect(ctx.config.kanban.columns.first.id, 'todo');
-      expect(ctx.config.mcp.host, 'localhost');
-      expect(ctx.config.mcp.port, 9090);
+      final dew = ctx.config.raw['dew'];
+      expect(dew['kanban']['prefix'], 'TEST');
+      expect(dew['mcp']['host'], 'localhost');
+      expect(dew['mcp']['port'], 9090);
     });
 
     test('find() locates config from a subdirectory', () async {

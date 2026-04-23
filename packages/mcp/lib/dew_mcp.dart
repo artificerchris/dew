@@ -1,6 +1,7 @@
 library;
 
 export 'src/dew_mcp_base.dart';
+export 'src/mcp_config.dart';
 
 import 'package:dew_core/dew_core.dart';
 import 'package:dew_mcp/src/dew_mcp_base.dart';

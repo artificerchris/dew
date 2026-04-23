@@ -3,89 +3,17 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-class TicketTypeConfig {
-  final String id;
-  final String name;
-
-  const TicketTypeConfig({required this.id, required this.name});
-}
-
-class ColumnConfig {
-  final String id;
-  final String name;
-  final String color;
-
-  const ColumnConfig({
-    required this.id,
-    required this.name,
-    required this.color,
-  });
-}
-
-class KanbanConfig {
-  final String prefix;
-  final List<TicketTypeConfig> ticketTypes;
-  final List<ColumnConfig> columns;
-
-  const KanbanConfig({
-    required this.prefix,
-    required this.ticketTypes,
-    required this.columns,
-  });
-}
-
-class McpConfig {
-  final String host;
-  final int port;
-
-  const McpConfig({required this.host, required this.port});
-}
-
+/// Thin wrapper around the raw project YAML.
+///
+/// Feature packages extend this class via Dart extension methods to expose
+/// typed configuration (e.g. [KanbanDewConfig.kanban], [McpDewConfig.mcp]).
+/// This keeps feature-specific config classes out of core.
 class DewConfig {
-  final KanbanConfig kanban;
-  final McpConfig mcp;
+  final YamlMap raw;
 
-  const DewConfig({required this.kanban, required this.mcp});
+  const DewConfig({required this.raw});
 
-  factory DewConfig.fromYaml(YamlMap yaml) {
-    final dew = yaml['dew'] as YamlMap;
-
-    final mcpYaml = dew['mcp'] as YamlMap;
-    final mcp = McpConfig(
-      host: mcpYaml['host'] as String,
-      port: mcpYaml['port'] as int,
-    );
-
-    final kanbanYaml = dew['kanban'] as YamlMap;
-    final ticketTypes =
-        (kanbanYaml['ticket_types'] as YamlList)
-            .map(
-              (t) => TicketTypeConfig(
-                id: t['id'] as String,
-                name: t['name'] as String,
-              ),
-            )
-            .toList();
-    final columns =
-        (kanbanYaml['columns'] as YamlList)
-            .map(
-              (c) => ColumnConfig(
-                id: c['id'] as String,
-                name: c['name'] as String,
-                color: c['color'] as String,
-              ),
-            )
-            .toList();
-
-    return DewConfig(
-      kanban: KanbanConfig(
-        prefix: kanbanYaml['prefix'] as String,
-        ticketTypes: ticketTypes,
-        columns: columns,
-      ),
-      mcp: mcp,
-    );
-  }
+  factory DewConfig.fromYaml(YamlMap yaml) => DewConfig(raw: yaml);
 }
 
 /// Locates the nearest project root and exposes the parsed [DewConfig].
