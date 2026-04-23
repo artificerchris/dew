@@ -1,9 +1,19 @@
 import 'package:dew_core/dew_core.dart';
 import 'package:path/path.dart' as p;
 
+import '../ticket.dart';
 import '../ticket_store.dart';
 
-class GetCommand extends DewCommand {
+class GetCommand extends DewCommand with DewToolCommand {
+  GetCommand() {
+    argParser.addOption(
+      'id',
+      abbr: 'i',
+      mandatory: true,
+      help: 'Ticket ID (e.g. DEW-0001).',
+    );
+  }
+
   @override
   final String name = 'get';
 
@@ -11,32 +21,34 @@ class GetCommand extends DewCommand {
   final String description = 'Get a kanban ticket by ID.';
 
   @override
-  Future<void> run() async {
-    final rest = argResults!.rest;
-    if (rest.isEmpty) usageException('Ticket ID is required.');
-    final id = rest.first.toUpperCase();
+  final String toolName = 'kanban_get_ticket';
 
+  @override
+  Future<String> callAsTool(Map<String, dynamic> args) async {
+    final id = (args['id'] as String).toUpperCase();
     final context = await ProjectContext.find();
     final store = TicketStore(
       kanbanDir: p.join(context.root, '.project', 'kanban'),
       prefix: context.config.kanban.prefix,
     );
-
     final ticket = await store.findById(id);
-    if (ticket == null) usageException('Ticket $id not found.');
+    if (ticket == null) throw ArgumentError('Ticket $id not found.');
+    return _format(ticket);
+  }
 
-    print('[${ticket.id}] (${ticket.type}) [${ticket.column}] ${ticket.title}');
-    print('Created: ${ticket.created.toLocal().toString().split('.').first}');
-
-    if (ticket.body.isNotEmpty) {
-      print('');
-      print(ticket.body);
+  String _format(Ticket t) {
+    final buf = StringBuffer();
+    buf.writeln('[${t.id}] (${t.type}) [${t.column}] ${t.title}');
+    buf.writeln('Created: ${t.created.toLocal().toString().split('.').first}');
+    if (t.body.isNotEmpty) {
+      buf.writeln();
+      buf.writeln(t.body);
     }
-
-    for (final (i, comment) in ticket.comments.indexed) {
-      print('');
-      print('── Comment ${i + 1} ${'─' * 20}');
-      print(comment);
+    for (final (i, comment) in t.comments.indexed) {
+      buf.writeln();
+      buf.writeln('── Comment ${i + 1} ${'─' * 20}');
+      buf.write(comment);
     }
+    return buf.toString().trimRight();
   }
 }

@@ -3,7 +3,7 @@ import 'package:path/path.dart' as p;
 
 import '../ticket_store.dart';
 
-class CreateCommand extends DewCommand {
+class CreateCommand extends DewCommand with DewToolCommand {
   CreateCommand() {
     argParser
       ..addOption('title', abbr: 't', mandatory: true, help: 'Ticket title.')
@@ -27,27 +27,30 @@ class CreateCommand extends DewCommand {
   final String description = 'Create a new kanban ticket.';
 
   @override
-  Future<void> run() async {
+  final String toolName = 'kanban_create_ticket';
+
+  @override
+  Future<String> callAsTool(Map<String, dynamic> args) async {
     final context = await ProjectContext.find();
     final config = context.config.kanban;
 
-    final title = argResults!['title'] as String;
-    final typeId = argResults!['type'] as String;
-    final columnArg = argResults!['column'] as String?;
-    final body = argResults!['body'] as String? ?? '';
+    final title = args['title'] as String;
+    final typeId = args['type'] as String;
+    final columnArg = args['column'] as String?;
+    final body = args['body'] as String? ?? '';
 
     if (!config.ticketTypes.any((t) => t.id == typeId)) {
-      usageException(
+      throw ArgumentError(
         'Unknown type "$typeId". '
-        'Valid types: ${config.ticketTypes.map((t) => t.id).join(', ')}',
+        'Valid: ${config.ticketTypes.map((t) => t.id).join(', ')}',
       );
     }
 
     final column = columnArg ?? config.columns.first.id;
     if (!config.columns.any((c) => c.id == column)) {
-      usageException(
+      throw ArgumentError(
         'Unknown column "$column". '
-        'Valid columns: ${config.columns.map((c) => c.id).join(', ')}',
+        'Valid: ${config.columns.map((c) => c.id).join(', ')}',
       );
     }
 
@@ -55,14 +58,12 @@ class CreateCommand extends DewCommand {
       kanbanDir: p.join(context.root, '.project', 'kanban'),
       prefix: config.prefix,
     );
-
     final ticket = await store.create(
       title: title,
       type: typeId,
       column: column,
       body: body,
     );
-
-    print('Created ${ticket.id}.');
+    return 'Created ${ticket.id}: ${ticket.title}';
   }
 }

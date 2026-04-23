@@ -81,7 +81,7 @@ void main(List<String> args) async {
     exit(1);
   }
 
-  print('Server: ${initResult.serverInfo?.name} ${initResult.serverInfo?.version}');
+  print('Server: ${initResult.serverInfo.name} ${initResult.serverInfo.version}');
   print('Protocol: ${initResult.protocolVersion}');
   print('');
 

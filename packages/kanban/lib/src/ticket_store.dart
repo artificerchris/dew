@@ -54,6 +54,16 @@ class TicketStore {
     return tickets;
   }
 
+  Future<Ticket> addComment(String id, String comment) async {
+    final ticket = await findById(id);
+    if (ticket == null) throw ArgumentError('Ticket $id not found.');
+    final updated = ticket.copyWith(
+      comments: [...ticket.comments, comment],
+    );
+    await File(_filePath(id)).writeAsString(updated.toFileContent());
+    return updated;
+  }
+
   Future<Ticket> update(
     String id, {
     String? title,

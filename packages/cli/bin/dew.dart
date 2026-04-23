@@ -5,12 +5,9 @@ import 'package:dew_mcp/dew_mcp.dart' as mcp;
 
 Future<void> main(List<String> args) async {
   final commandRegistry = CommandRegistry();
-  final toolRegistry = mcp.McpToolRegistry();
-
-  toolRegistry.register(kanban.KanbanToolProvider());
 
   kanban.registerCommands(commandRegistry);
-  mcp.registerCommands(commandRegistry, toolRegistry);
+  mcp.registerCommands(commandRegistry);
 
   final runner = CommandRunner<void>('dew', 'A project management tool.');
 

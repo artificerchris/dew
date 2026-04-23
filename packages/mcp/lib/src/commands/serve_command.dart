@@ -4,12 +4,11 @@ import 'package:dart_mcp/stdio.dart';
 import 'package:dew_core/dew_core.dart';
 
 import '../dew_mcp_server.dart';
-import '../mcp_tool_registry.dart';
 
 class ServeCommand extends DewCommand {
-  final McpToolRegistry _toolRegistry;
+  final CommandRegistry _commandRegistry;
 
-  ServeCommand(this._toolRegistry);
+  ServeCommand(this._commandRegistry);
 
   @override
   final String name = 'serve';
@@ -21,7 +20,8 @@ class ServeCommand extends DewCommand {
 
   @override
   Future<void> run() async {
-    final tools = _toolRegistry.allTools;
+    // Resolve tools at serve time so all feature packages are already registered.
+    final tools = _commandRegistry.mcpTools;
 
     io.stderr.writeln(
       'Dew MCP server starting — ${tools.length} tool(s) registered.',

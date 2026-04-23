@@ -17,7 +17,7 @@ void main() {
       final cmd = KanbanCommand();
       expect(
         cmd.subcommands.keys,
-        containsAll(['create', 'get', 'update', 'delete']),
+        containsAll(['create', 'list', 'get', 'update', 'delete', 'search', 'comment', 'config']),
       );
     });
 
@@ -25,6 +25,94 @@ void main() {
       final registry = CommandRegistry();
       registerCommands(registry);
       expect(registry.commands.map((c) => c.name), contains('kanban'));
+    });
+  });
+
+  group('CommandRegistry.mcpTools via kanban', () {
+    test('exposes eight tools with unique names', () {
+      final registry = CommandRegistry();
+      registerCommands(registry);
+      final tools = registry.mcpTools;
+      expect(tools, hasLength(8));
+      final names = tools.map((t) => t.name).toSet();
+      expect(names, {
+        'kanban_create_ticket',
+        'kanban_list_tickets',
+        'kanban_get_ticket',
+        'kanban_update_ticket',
+        'kanban_delete_ticket',
+        'kanban_search_tickets',
+        'kanban_add_comment',
+        'kanban_get_config',
+      });
+    });
+
+    test('all tools have non-empty descriptions and object inputSchema', () {
+      final registry = CommandRegistry();
+      registerCommands(registry);
+      for (final tool in registry.mcpTools) {
+        expect(tool.description, isNotEmpty, reason: '${tool.name} description');
+        expect(tool.inputSchema['type'], 'object', reason: '${tool.name} schema type');
+      }
+    });
+
+    test('schema derived from argParser — create tool has required fields', () {
+      final registry = CommandRegistry();
+      registerCommands(registry);
+      final create = registry.mcpTools.firstWhere((t) => t.name == 'kanban_create_ticket');
+      final required = create.inputSchema['required'] as List;
+      expect(required, containsAll(['title', 'type']));
+    });
+
+    test('create and list tools have working handlers', () async {
+      final tempDir = await Directory.systemTemp.createTemp('kanban_tool_test_');
+      final origDir = Directory.current;
+      try {
+        await Directory(p.join(tempDir.path, '.project', 'kanban')).create(recursive: true);
+        await File(p.join(tempDir.path, '.project', 'dew.yaml')).writeAsString('''
+dew:
+  mcp:
+    host: localhost
+    port: 9090
+  kanban:
+    prefix: T
+    ticket_types:
+      - id: task
+        name: Task
+    columns:
+      - id: todo
+        name: To Do
+        color: blue
+''');
+        Directory.current = tempDir;
+        final registry = CommandRegistry();
+        registerCommands(registry);
+        final tools = {for (final t in registry.mcpTools) t.name: t};
+
+        final result = await tools['kanban_create_ticket']!.handler({
+          'title': 'Hello',
+          'type': 'task',
+        });
+        expect(result, contains('T-0001'));
+
+        final listResult = await tools['kanban_list_tickets']!.handler({});
+        expect(listResult, contains('T-0001'));
+
+        final searchResult = await tools['kanban_search_tickets']!.handler({'query': 'Hello'});
+        expect(searchResult, contains('T-0001'));
+
+        await tools['kanban_add_comment']!.handler({'id': 'T-0001', 'comment': 'Nice ticket.'});
+
+        final getResult = await tools['kanban_get_ticket']!.handler({'id': 'T-0001'});
+        expect(getResult, contains('Nice ticket.'));
+
+        final configResult = await tools['kanban_get_config']!.handler({});
+        expect(configResult, contains('todo'));
+        expect(configResult, contains('task'));
+      } finally {
+        Directory.current = origDir;
+        await tempDir.delete(recursive: true);
+      }
     });
   });
 
@@ -140,72 +228,6 @@ void main() {
     });
   });
 
-  group('KanbanToolProvider', () {
-    test('exposes five tools with unique names', () {
-      final provider = KanbanToolProvider();
-      expect(provider.tools, hasLength(5));
-      final names = provider.tools.map((t) => t.name).toSet();
-      expect(names, {
-        'kanban_create_ticket',
-        'kanban_list_tickets',
-        'kanban_get_ticket',
-        'kanban_update_ticket',
-        'kanban_delete_ticket',
-      });
-    });
-
-    test('all tools have non-empty descriptions and object inputSchema', () {
-      for (final tool in KanbanToolProvider().tools) {
-        expect(tool.description, isNotEmpty, reason: '${tool.name} description');
-        expect(tool.inputSchema['type'], 'object',
-            reason: '${tool.name} schema type');
-      }
-    });
-
-    test('create and list tools have handlers that work', () async {
-      // Use a real temp dir with a fake dew.yaml so ProjectContext.find()
-      // resolves — handlers call ProjectContext.find() internally.
-      final tempDir = await Directory.systemTemp.createTemp('kanban_tool_test_');
-      final origDir = Directory.current;
-      try {
-        await Directory(p.join(tempDir.path, '.project', 'kanban')).create(recursive: true);
-        await File(p.join(tempDir.path, '.project', 'dew.yaml')).writeAsString('''
-dew:
-  mcp:
-    host: localhost
-    port: 9090
-  kanban:
-    prefix: T
-    ticket_types:
-      - id: task
-        name: Task
-    columns:
-      - id: todo
-        name: To Do
-        color: blue
-''');
-        Directory.current = tempDir;
-        final provider = KanbanToolProvider();
-
-        final createTool = provider.tools.firstWhere(
-          (t) => t.name == 'kanban_create_ticket',
-        );
-        final result = await createTool.handler({
-          'title': 'Hello',
-          'type': 'task',
-        });
-        expect(result, contains('T-0001'));
-
-        final listTool = provider.tools.firstWhere(
-          (t) => t.name == 'kanban_list_tickets',
-        );
-        final listResult = await listTool.handler({});
-        expect(listResult, contains('T-0001'));
-      } finally {
-        Directory.current = origDir;
-        await tempDir.delete(recursive: true);
-      }
-    });
-  });
 }
+
 
