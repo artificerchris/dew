@@ -64,26 +64,58 @@ class TicketStore {
     return updated;
   }
 
-  Future<Ticket> linkTickets(String id, String targetId) async {
+  Future<Ticket> linkTickets(String id, String targetId, String type) async {
+    if (!linkTypeInverses.containsKey(type)) {
+      throw ArgumentError(
+        'Unknown link type "$type". '
+        'Valid: ${linkTypeInverses.keys.join(', ')}',
+      );
+    }
     final ticket = await findById(id);
     if (ticket == null) throw ArgumentError('Ticket $id not found.');
-    if (await findById(targetId) == null) {
-      throw ArgumentError('Ticket $targetId not found.');
+    final target = await findById(targetId);
+    if (target == null) throw ArgumentError('Ticket $targetId not found.');
+
+    // Forward link (idempotent — skip if already linked to same target).
+    if (!ticket.links.any((l) => l.targetId == targetId)) {
+      final updated = ticket.copyWith(
+        links: [...ticket.links, TicketLink(targetId: targetId, type: type)],
+      );
+      await File(_filePath(id)).writeAsString(updated.toFileContent());
     }
-    if (ticket.links.contains(targetId)) return ticket;
-    final updated = ticket.copyWith(links: [...ticket.links, targetId]);
-    await File(_filePath(id)).writeAsString(updated.toFileContent());
-    return updated;
+
+    // Inverse link on the target.
+    final inverseType = linkTypeInverses[type]!;
+    if (!target.links.any((l) => l.targetId == id)) {
+      final updatedTarget = target.copyWith(
+        links: [...target.links, TicketLink(targetId: id, type: inverseType)],
+      );
+      await File(_filePath(targetId)).writeAsString(updatedTarget.toFileContent());
+    }
+
+    return (await findById(id))!;
   }
 
   Future<Ticket> unlinkTickets(String id, String targetId) async {
     final ticket = await findById(id);
     if (ticket == null) throw ArgumentError('Ticket $id not found.');
+
+    // Remove forward link.
     final updated = ticket.copyWith(
-      links: ticket.links.where((l) => l != targetId).toList(),
+      links: ticket.links.where((l) => l.targetId != targetId).toList(),
     );
     await File(_filePath(id)).writeAsString(updated.toFileContent());
-    return updated;
+
+    // Remove inverse link on target (if it exists).
+    final target = await findById(targetId);
+    if (target != null) {
+      final updatedTarget = target.copyWith(
+        links: target.links.where((l) => l.targetId != id).toList(),
+      );
+      await File(_filePath(targetId)).writeAsString(updatedTarget.toFileContent());
+    }
+
+    return (await findById(id))!;
   }
 
   /// Returns counts of tickets grouped by column and type.

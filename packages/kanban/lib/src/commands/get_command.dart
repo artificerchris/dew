@@ -40,6 +40,13 @@ class GetCommand extends DewCommand with DewToolCommand {
     final buf = StringBuffer();
     buf.writeln('[${t.id}] (${t.type}) [${t.column}] ${t.title}');
     buf.writeln('Created: ${t.created.toLocal().toString().split('.').first}');
+    if (t.links.isNotEmpty) {
+      buf.writeln();
+      buf.writeln('Links:');
+      for (final link in t.links) {
+        buf.writeln('  ${link.type.replaceAll('_', ' ')}: ${link.targetId}');
+      }
+    }
     if (t.body.isNotEmpty) {
       buf.writeln();
       buf.writeln(t.body);

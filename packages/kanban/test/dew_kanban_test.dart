@@ -173,10 +173,17 @@ dew:
         created: DateTime.utc(2026, 1, 3),
         body: '',
         comments: const [],
-        links: ['TEST-0001', 'TEST-0002'],
+        links: [
+          TicketLink(targetId: 'TEST-0001', type: 'blocks'),
+          TicketLink(targetId: 'TEST-0002', type: 'relates_to'),
+        ],
       );
       final parsed = Ticket.fromFileContent(t.id, t.toFileContent());
-      expect(parsed.links, ['TEST-0001', 'TEST-0002']);
+      expect(parsed.links, hasLength(2));
+      expect(parsed.links[0].targetId, 'TEST-0001');
+      expect(parsed.links[0].type, 'blocks');
+      expect(parsed.links[1].targetId, 'TEST-0002');
+      expect(parsed.links[1].type, 'relates_to');
     });
 
     test('no links field when links is empty', () {
@@ -267,34 +274,70 @@ dew:
       );
     });
 
-    test('linkTickets adds link and is idempotent', () async {
+    test('linkTickets adds typed link bidirectionally and is idempotent', () async {
       final store = makeStore();
       await store.create(title: 'A', type: 'task', column: 'todo');
       await store.create(title: 'B', type: 'task', column: 'todo');
-      await store.linkTickets('TEST-0001', 'TEST-0002');
-      final t = await store.findById('TEST-0001');
-      expect(t!.links, contains('TEST-0002'));
-      // idempotent
-      await store.linkTickets('TEST-0001', 'TEST-0002');
-      final t2 = await store.findById('TEST-0001');
-      expect(t2!.links, hasLength(1));
+      await store.linkTickets('TEST-0001', 'TEST-0002', 'blocks');
+
+      final a = await store.findById('TEST-0001');
+      expect(a!.links, hasLength(1));
+      expect(a.links.first.targetId, 'TEST-0002');
+      expect(a.links.first.type, 'blocks');
+
+      // Inverse written on target.
+      final b = await store.findById('TEST-0002');
+      expect(b!.links, hasLength(1));
+      expect(b.links.first.targetId, 'TEST-0001');
+      expect(b.links.first.type, 'is_blocked_by');
+
+      // Idempotent — calling again doesn't add duplicates.
+      await store.linkTickets('TEST-0001', 'TEST-0002', 'blocks');
+      final a2 = await store.findById('TEST-0001');
+      expect(a2!.links, hasLength(1));
+    });
+
+    test('linkTickets relates_to is symmetric', () async {
+      final store = makeStore();
+      await store.create(title: 'A', type: 'task', column: 'todo');
+      await store.create(title: 'B', type: 'task', column: 'todo');
+      await store.linkTickets('TEST-0001', 'TEST-0002', 'relates_to');
+
+      final a = await store.findById('TEST-0001');
+      final b = await store.findById('TEST-0002');
+      expect(a!.links.first.type, 'relates_to');
+      expect(b!.links.first.type, 'relates_to');
+    });
+
+    test('linkTickets parent_of / child_of inverse pair', () async {
+      final store = makeStore();
+      await store.create(title: 'Epic', type: 'task', column: 'todo');
+      await store.create(title: 'Story', type: 'task', column: 'todo');
+      await store.linkTickets('TEST-0001', 'TEST-0002', 'parent_of');
+
+      final parent = await store.findById('TEST-0001');
+      final child = await store.findById('TEST-0002');
+      expect(parent!.links.first.type, 'parent_of');
+      expect(child!.links.first.type, 'child_of');
     });
 
     test('linkTickets throws for self-link via command', () async {
       final store = makeStore();
       await store.create(title: 'A', type: 'task', column: 'todo');
-      // Self-link guard is in the command layer, not the store — store allows it.
-      // Test the command layer check separately via tooling.
+      // Self-link guard is in the command layer, not the store.
     });
 
-    test('unlinkTickets removes link', () async {
+    test('unlinkTickets removes link on both sides', () async {
       final store = makeStore();
       await store.create(title: 'A', type: 'task', column: 'todo');
       await store.create(title: 'B', type: 'task', column: 'todo');
-      await store.linkTickets('TEST-0001', 'TEST-0002');
+      await store.linkTickets('TEST-0001', 'TEST-0002', 'blocks');
       await store.unlinkTickets('TEST-0001', 'TEST-0002');
-      final t = await store.findById('TEST-0001');
-      expect(t!.links, isEmpty);
+
+      final a = await store.findById('TEST-0001');
+      final b = await store.findById('TEST-0002');
+      expect(a!.links, isEmpty);
+      expect(b!.links, isEmpty);
     });
 
     test('stats returns correct counts', () async {

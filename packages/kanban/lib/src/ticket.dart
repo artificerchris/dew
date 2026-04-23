@@ -1,5 +1,33 @@
 import 'package:yaml/yaml.dart';
 
+/// The valid relationship types between tickets, and their inverses.
+const Map<String, String> linkTypeInverses = {
+  'blocks': 'is_blocked_by',
+  'is_blocked_by': 'blocks',
+  'relates_to': 'relates_to',
+  'duplicates': 'is_duplicated_by',
+  'is_duplicated_by': 'duplicates',
+  'parent_of': 'child_of',
+  'child_of': 'parent_of',
+};
+
+/// A typed, directed link from one ticket to another.
+class TicketLink {
+  final String targetId;
+
+  /// One of the keys in [linkTypeInverses].
+  final String type;
+
+  const TicketLink({required this.targetId, required this.type});
+
+  @override
+  bool operator ==(Object other) =>
+      other is TicketLink && other.targetId == targetId && other.type == type;
+
+  @override
+  int get hashCode => Object.hash(targetId, type);
+}
+
 class Ticket {
   final String id;
   final String title;
@@ -9,8 +37,8 @@ class Ticket {
   final String body;
   final List<String> comments;
 
-  /// IDs of tickets this ticket is linked to (e.g. dependencies).
-  final List<String> links;
+  /// Typed links to other tickets.
+  final List<TicketLink> links;
 
   const Ticket({
     required this.id,
@@ -29,7 +57,7 @@ class Ticket {
     String? column,
     String? body,
     List<String>? comments,
-    List<String>? links,
+    List<TicketLink>? links,
   }) => Ticket(
     id: id,
     title: title ?? this.title,
@@ -68,7 +96,8 @@ class Ticket {
     if (links.isNotEmpty) {
       buf.writeln('links:');
       for (final link in links) {
-        buf.writeln('  - $link');
+        buf.writeln('  - id: ${link.targetId}');
+        buf.writeln('    type: ${link.type}');
       }
     }
     buf.writeln('---');
@@ -101,6 +130,18 @@ class Ticket {
     final sections =
         rest.split('\n---\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
 
+    final rawLinks = fm['links'] as YamlList?;
+    final links = rawLinks
+            ?.map((entry) {
+              final map = entry as YamlMap;
+              return TicketLink(
+                targetId: map['id'] as String,
+                type: map['type'] as String,
+              );
+            })
+            .toList() ??
+        const [];
+
     return Ticket(
       id: id,
       title: fm['title'] as String,
@@ -109,7 +150,8 @@ class Ticket {
       created: DateTime.parse(fm['created'] as String),
       body: sections.isNotEmpty ? sections[0] : '',
       comments: sections.length > 1 ? sections.sublist(1) : const [],
-      links: (fm['links'] as YamlList?)?.cast<String>().toList() ?? const [],
+      links: links,
     );
   }
 }
+
