@@ -13,6 +13,7 @@ dependencies:
   dew_core:
     path: ../core
   path: ^1.9.0
+  yaml: ^3.1.0
 
 dev_dependencies:
   lints: ^6.0.0

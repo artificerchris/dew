@@ -1,7 +1,9 @@
+import 'dart:io';
+
 import 'package:dew_core/dew_core.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-// Minimal concrete command for testing the registry.
 class _TestCommand extends DewCommand {
   @override
   final String name = 'test-cmd';
@@ -27,7 +29,60 @@ void main() {
 
     test('commands list is unmodifiable', () {
       final registry = CommandRegistry();
-      expect(() => registry.commands.add(_TestCommand()), throwsUnsupportedError);
+      expect(
+        () => registry.commands.add(_TestCommand()),
+        throwsUnsupportedError,
+      );
+    });
+  });
+
+  group('ProjectContext', () {
+    late Directory tempDir;
+    late Directory originalDir;
+
+    setUp(() async {
+      originalDir = Directory.current;
+      tempDir = await Directory.systemTemp.createTemp('dew_core_test_');
+      await Directory(p.join(tempDir.path, '.project')).create();
+      await File(
+        p.join(tempDir.path, '.project', 'dew.yaml'),
+      ).writeAsString('''
+dew:
+  mcp:
+    host: localhost
+    port: 9090
+  kanban:
+    prefix: TEST
+    ticket_types:
+      - id: task
+        name: Task
+    columns:
+      - id: todo
+        name: To Do
+        color: blue
+''');
+      Directory.current = tempDir;
+    });
+
+    tearDown(() async {
+      Directory.current = originalDir;
+      await tempDir.delete(recursive: true);
+    });
+
+    test('find() loads config from .project/dew.yaml', () async {
+      final ctx = await ProjectContext.find();
+      expect(ctx.config.kanban.prefix, 'TEST');
+      expect(ctx.config.kanban.ticketTypes, hasLength(1));
+      expect(ctx.config.kanban.columns.first.id, 'todo');
+      expect(ctx.config.mcp.host, 'localhost');
+      expect(ctx.config.mcp.port, 9090);
+    });
+
+    test('find() locates config from a subdirectory', () async {
+      final sub = await Directory(p.join(tempDir.path, 'sub')).create();
+      Directory.current = sub;
+      final ctx = await ProjectContext.find();
+      expect(ctx.root, tempDir.path);
     });
   });
 }
