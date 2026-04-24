@@ -18,7 +18,7 @@ void main() {
       expect(
         cmd.subcommands.keys,
         containsAll([
-          'create', 'list', 'board', 'get', 'update', 'delete',
+          'create', 'list', 'board', 'get', 'update', 'delete', 'archive',
           'move', 'search', 'comment', 'config', 'stats', 'link', 'unlink',
         ]),
       );
@@ -36,7 +36,7 @@ void main() {
       final registry = CommandRegistry();
       registerCommands(registry);
       final tools = registry.mcpTools;
-      expect(tools, hasLength(13));
+      expect(tools, hasLength(14));
       final names = tools.map((t) => t.name).toSet();
       expect(names, {
         'kanban_create_ticket',
@@ -45,6 +45,7 @@ void main() {
         'kanban_get_ticket',
         'kanban_update_ticket',
         'kanban_delete_ticket',
+        'kanban_archive_ticket',
         'kanban_move_ticket',
         'kanban_search_tickets',
         'kanban_add_comment',
@@ -382,6 +383,22 @@ dew:
       await store.create(title: 'B', type: 'task', column: 'todo');
       final all = await store.list();
       expect(all.map((t) => t.id), ['TEST-0001', 'TEST-0002']);
+    });
+
+    test('list excludes archive by default, includes with flag', () async {
+      final store = makeStore();
+      await store.create(title: 'Active', type: 'task', column: 'todo');
+      // Manually move to archive dir to simulate archived state.
+      final kanbanDir = Directory(p.join(tempDir.path, 'kanban'));
+      final archiveDir = Directory(p.join(kanbanDir.path, 'archive'));
+      await archiveDir.create(recursive: true);
+      final src = File(p.join(kanbanDir.path, 'todo', 'TEST-0001.md'));
+      await src.rename(p.join(archiveDir.path, 'TEST-0001.md'));
+
+      expect(await store.list(), isEmpty);
+      final withArchive = await store.list(includeArchived: true);
+      expect(withArchive, hasLength(1));
+      expect(withArchive.first.column, 'archive');
     });
 
     test('update patches specified fields', () async {

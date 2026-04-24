@@ -1,6 +1,7 @@
 import 'package:dew_core/dew_core.dart';
 
 import 'commands/add_comment_command.dart';
+import 'commands/archive_command.dart';
 import 'commands/board_command.dart';
 import 'commands/create_command.dart';
 import 'commands/delete_command.dart';
@@ -23,6 +24,7 @@ class KanbanCommand extends DewCommand {
     addSubcommand(GetCommand());
     addSubcommand(UpdateCommand());
     addSubcommand(DeleteCommand());
+    addSubcommand(ArchiveCommand());
     addSubcommand(MoveCommand());
     addSubcommand(SearchCommand());
     addSubcommand(AddCommentCommand());

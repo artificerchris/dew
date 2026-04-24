@@ -42,7 +42,7 @@ class TicketStore {
     return Ticket.fromFileContent(id, await found.file.readAsString(), found.column);
   }
 
-  Future<List<Ticket>> list() async {
+  Future<List<Ticket>> list({bool includeArchived = false}) async {
     final dir = Directory(kanbanDir);
     if (!await dir.exists()) return const [];
     final pattern = RegExp(r'^' + RegExp.escape(prefix) + r'-\d{4}\.md$');
@@ -50,7 +50,8 @@ class TicketStore {
     await for (final entity in dir.list()) {
       if (entity is! Directory) continue;
       final col = p.basename(entity.path);
-      if (col == 'archive' || col == 'attachments') continue;
+      if (col == 'attachments') continue;
+      if (col == 'archive' && !includeArchived) continue;
       await for (final file in entity.list()) {
         if (file is! File) continue;
         final name = p.basename(file.path);

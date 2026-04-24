@@ -11,7 +11,8 @@ class ListCommand extends DewCommand with DewToolCommand {
       ..addOption('column', abbr: 'c', help: 'Filter to tickets in this column.')
       ..addOption('type', abbr: 't', help: 'Filter to tickets of this type.')
       ..addOption('label', help: 'Filter to tickets with this label.')
-      ..addOption('milestone', help: 'Filter to tickets in this milestone.');
+      ..addOption('milestone', help: 'Filter to tickets in this milestone.')
+      ..addFlag('include-archived', help: 'Include archived tickets.', negatable: false);
   }
 
   @override
@@ -29,13 +30,14 @@ class ListCommand extends DewCommand with DewToolCommand {
     final typeFilter = args['type'] as String?;
     final labelFilter = args['label'] as String?;
     final milestoneFilter = args['milestone'] as String?;
+    final includeArchived = args['include-archived'] as bool? ?? false;
 
     final context = await ProjectContext.find();
     final store = TicketStore(
       kanbanDir: p.join(context.root, '.project', 'kanban'),
       prefix: context.config.kanban.prefix,
     );
-    var tickets = await store.list();
+    var tickets = await store.list(includeArchived: includeArchived);
 
     if (columnFilter != null) {
       tickets = tickets.where((t) => t.column == columnFilter).toList();
