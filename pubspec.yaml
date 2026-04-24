@@ -45,3 +45,8 @@ melos:
         run 'dew mcp serve' from your MCP client config — this keeps stdout
         clean for the JSON-RPC channel.
       run: dart compile exe packages/cli/bin/dew.dart -o .project/toolchain/bin/dew
+    install:local:
+      description: >-
+        Compile and install the Dew CLI to ~/.local/bin/dew so it is available
+        globally on your PATH. Requires ~/.local/bin to be on PATH.
+      run: dart compile exe packages/cli/bin/dew.dart -o ~/.local/bin/dew
