@@ -22,6 +22,9 @@ class ProjectDirs {
   final String _root;
   const ProjectDirs(this._root);
 
+  /// The workspace root (where `.project/` lives).
+  String get workspace => _root;
+
   /// `.project/` directory.
   String get project => p.join(_root, '.project');
 }
