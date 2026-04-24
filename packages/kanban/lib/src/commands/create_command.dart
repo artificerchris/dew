@@ -1,11 +1,15 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import '../kanban_config.dart';
 import 'package:path/path.dart' as p;
 
 import '../ticket_store.dart';
 
 class CreateCommand extends DewCommand with DewToolCommand {
-  CreateCommand() {
+  final FileSystem _fs;
+
+  CreateCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption('title', abbr: 't', mandatory: true, help: 'Ticket title.')
       ..addOption(
@@ -37,7 +41,7 @@ class CreateCommand extends DewCommand with DewToolCommand {
 
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {
-    final context = await ProjectContext.find();
+    final context = await ProjectContext.find(fs: _fs);
     final config = context.config.kanban;
 
     final title = args['title'] as String;
@@ -65,6 +69,7 @@ class CreateCommand extends DewCommand with DewToolCommand {
     final store = TicketStore(
       kanbanDir: p.join(context.root, '.project', 'kanban'),
       prefix: config.prefix,
+      fs: context.fs,
     );
     final ticket = await store.create(
       title: title,

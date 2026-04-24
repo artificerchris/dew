@@ -1,4 +1,6 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import '../kanban_config.dart';
 import 'package:path/path.dart' as p;
 
@@ -6,7 +8,9 @@ import '../ticket.dart';
 import '../ticket_store.dart';
 
 class ListCommand extends DewCommand with DewToolCommand {
-  ListCommand() {
+  final FileSystem _fs;
+
+  ListCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption('column', abbr: 'c', help: 'Filter to tickets in this column.')
       ..addOption('type', abbr: 't', help: 'Filter to tickets of this type.')
@@ -32,10 +36,11 @@ class ListCommand extends DewCommand with DewToolCommand {
     final milestoneFilter = args['milestone'] as String?;
     final includeArchived = args['include-archived'] as bool? ?? false;
 
-    final context = await ProjectContext.find();
+    final context = await ProjectContext.find(fs: _fs);
     final store = TicketStore(
       kanbanDir: p.join(context.root, '.project', 'kanban'),
       prefix: context.config.kanban.prefix,
+      fs: context.fs,
     );
     var tickets = await store.list(includeArchived: includeArchived);
 

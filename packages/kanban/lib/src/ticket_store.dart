@@ -1,5 +1,5 @@
-import 'dart:io';
-
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import 'package:path/path.dart' as p;
 
 import 'ticket.dart';
@@ -7,8 +7,13 @@ import 'ticket.dart';
 class TicketStore {
   final String kanbanDir;
   final String prefix;
+  final FileSystem fs;
 
-  const TicketStore({required this.kanbanDir, required this.prefix});
+  const TicketStore({
+    required this.kanbanDir,
+    required this.prefix,
+    this.fs = const LocalFileSystem(),
+  });
 
   Future<Ticket> create({
     required String title,
@@ -18,7 +23,7 @@ class TicketStore {
     List<String> milestones = const [],
     List<String> labels = const [],
   }) async {
-    final columnDir = Directory(p.join(kanbanDir, column));
+    final columnDir = fs.directory(p.join(kanbanDir, column));
     await columnDir.create(recursive: true);
     final id = _formatId(await _nextNumber());
     final ticket = Ticket(
@@ -32,7 +37,7 @@ class TicketStore {
       milestones: milestones,
       labels: labels,
     );
-    await File(p.join(columnDir.path, '$id.md')).writeAsString(ticket.toFileContent());
+    await fs.file(p.join(columnDir.path, '$id.md')).writeAsString(ticket.toFileContent());
     return ticket;
   }
 
@@ -43,7 +48,7 @@ class TicketStore {
   }
 
   Future<List<Ticket>> list({bool includeArchived = false}) async {
-    final dir = Directory(kanbanDir);
+    final dir = fs.directory(kanbanDir);
     if (!await dir.exists()) return const [];
     final pattern = RegExp(r'^' + RegExp.escape(prefix) + r'-\d{4}\.md$');
     final tickets = <Ticket>[];
@@ -168,9 +173,9 @@ class TicketStore {
     if (column != null && column != ticket.column) {
       // Column changed — move the file to the new column directory.
       await found.file.delete();
-      final newColDir = Directory(p.join(kanbanDir, column));
+      final newColDir = fs.directory(p.join(kanbanDir, column));
       await newColDir.create(recursive: true);
-      await File(p.join(newColDir.path, '$id.md')).writeAsString(updated.toFileContent());
+      await fs.file(p.join(newColDir.path, '$id.md')).writeAsString(updated.toFileContent());
     } else {
       await found.file.writeAsString(updated.toFileContent());
     }
@@ -182,26 +187,26 @@ class TicketStore {
     if (found == null) throw ArgumentError('Ticket $id not found.');
     await found.file.delete();
     // Clean up per-ticket attachment directory if present.
-    final attachmentsDir = Directory(p.join(kanbanDir, 'attachments', id));
+    final attachmentsDir = fs.directory(p.join(kanbanDir, 'attachments', id));
     if (await attachmentsDir.exists()) await attachmentsDir.delete(recursive: true);
   }
 
   /// Searches all column subdirectories (one level deep) for a ticket file.
   /// Skips the [attachments] directory. Includes [archive].
   Future<({File file, String column})?> _findTicketFile(String id) async {
-    final dir = Directory(kanbanDir);
+    final dir = fs.directory(kanbanDir);
     if (!await dir.exists()) return null;
     await for (final entity in dir.list()) {
       if (entity is! Directory) continue;
       if (p.basename(entity.path) == 'attachments') continue;
-      final file = File(p.join(entity.path, '$id.md'));
+      final file = fs.file(p.join(entity.path, '$id.md'));
       if (await file.exists()) return (file: file, column: p.basename(entity.path));
     }
     return null;
   }
 
   Future<int> _nextNumber() async {
-    final dir = Directory(kanbanDir);
+    final dir = fs.directory(kanbanDir);
     if (!await dir.exists()) return 1;
     final pattern = RegExp(r'^' + RegExp.escape(prefix) + r'-(\d+)\.md$');
     var max = 0;

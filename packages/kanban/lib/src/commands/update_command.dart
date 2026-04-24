@@ -1,11 +1,15 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import '../kanban_config.dart';
 import 'package:path/path.dart' as p;
 
 import '../ticket_store.dart';
 
 class UpdateCommand extends DewCommand with DewToolCommand {
-  UpdateCommand() {
+  final FileSystem _fs;
+
+  UpdateCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption('id', abbr: 'i', mandatory: true, help: 'Ticket ID.')
       ..addOption('title', abbr: 't', help: 'New title.')
@@ -58,7 +62,7 @@ class UpdateCommand extends DewCommand with DewToolCommand {
       );
     }
 
-    final context = await ProjectContext.find();
+    final context = await ProjectContext.find(fs: _fs);
     final config = context.config.kanban;
 
     if (typeId != null && !config.ticketTypes.any((t) => t.id == typeId)) {
@@ -77,6 +81,7 @@ class UpdateCommand extends DewCommand with DewToolCommand {
     final store = TicketStore(
       kanbanDir: p.join(context.root, '.project', 'kanban'),
       prefix: config.prefix,
+      fs: context.fs,
     );
     final ticket = await store.update(
       id,

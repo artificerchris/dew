@@ -1,10 +1,15 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import '../kanban_config.dart';
 import 'package:path/path.dart' as p;
 
 import '../ticket_store.dart';
 
 class StatsCommand extends DewCommand with DewToolCommand {
+  final FileSystem _fs;
+
+  StatsCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs;
   @override
   final String name = 'stats';
 
@@ -16,11 +21,12 @@ class StatsCommand extends DewCommand with DewToolCommand {
 
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {
-    final context = await ProjectContext.find();
+    final context = await ProjectContext.find(fs: _fs);
     final config = context.config.kanban;
     final store = TicketStore(
       kanbanDir: p.join(context.root, '.project', 'kanban'),
       prefix: config.prefix,
+      fs: context.fs,
     );
 
     final stats = await store.stats();

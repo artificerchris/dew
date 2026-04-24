@@ -1,5 +1,5 @@
-import 'dart:io';
-
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -10,9 +10,7 @@ import 'package:yaml/yaml.dart';
 /// This keeps feature-specific config classes out of core.
 class DewConfig {
   final YamlMap raw;
-
   const DewConfig({required this.raw});
-
   factory DewConfig.fromYaml(YamlMap yaml) => DewConfig(raw: yaml);
 }
 
@@ -20,20 +18,25 @@ class DewConfig {
 class ProjectContext {
   final String root;
   final DewConfig config;
+  final FileSystem fs;
 
-  const ProjectContext({required this.root, required this.config});
+  const ProjectContext({required this.root, required this.config, required this.fs});
 
-  /// Walks up from [from] (defaults to [Directory.current]) until a
+  /// Walks up from [from] (defaults to [fs.currentDirectory]) until a
   /// `.project/dew.yaml` is found.
-  static Future<ProjectContext> find({Directory? from}) async {
-    var dir = from ?? Directory.current;
+  static Future<ProjectContext> find({
+    FileSystem fs = const LocalFileSystem(),
+    Directory? from,
+  }) async {
+    var dir = from ?? fs.currentDirectory;
     while (true) {
-      final configFile = File(p.join(dir.path, '.project', 'dew.yaml'));
+      final configFile = fs.file(p.join(dir.path, '.project', 'dew.yaml'));
       if (await configFile.exists()) {
         final yaml = loadYaml(await configFile.readAsString()) as YamlMap;
         return ProjectContext(
           root: dir.path,
           config: DewConfig.fromYaml(yaml),
+          fs: fs,
         );
       }
       final parent = dir.parent;

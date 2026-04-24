@@ -1,7 +1,5 @@
-import 'dart:io';
-
 import 'package:dew_core/dew_core.dart';
-import 'package:path/path.dart' as p;
+import 'package:file/memory.dart';
 import 'package:test/test.dart';
 
 class _TestCommand extends DewCommand {
@@ -37,16 +35,7 @@ void main() {
   });
 
   group('ProjectContext', () {
-    late Directory tempDir;
-    late Directory originalDir;
-
-    setUp(() async {
-      originalDir = Directory.current;
-      tempDir = await Directory.systemTemp.createTemp('dew_core_test_');
-      await Directory(p.join(tempDir.path, '.project')).create();
-      await File(
-        p.join(tempDir.path, '.project', 'dew.yaml'),
-      ).writeAsString('''
+    const configYaml = '''
 dew:
   mcp:
     host: localhost
@@ -60,17 +49,14 @@ dew:
       - id: todo
         name: To Do
         color: blue
-''');
-      Directory.current = tempDir;
-    });
-
-    tearDown(() async {
-      Directory.current = originalDir;
-      await tempDir.delete(recursive: true);
-    });
+''';
 
     test('find() loads config and exposes raw yaml', () async {
-      final ctx = await ProjectContext.find();
+      final fs = MemoryFileSystem();
+      fs.directory('/.project').createSync(recursive: true);
+      fs.file('/.project/dew.yaml').writeAsStringSync(configYaml);
+
+      final ctx = await ProjectContext.find(fs: fs);
       final dew = ctx.config.raw['dew'];
       expect(dew['kanban']['prefix'], 'TEST');
       expect(dew['mcp']['host'], 'localhost');
@@ -78,10 +64,13 @@ dew:
     });
 
     test('find() locates config from a subdirectory', () async {
-      final sub = await Directory(p.join(tempDir.path, 'sub')).create();
-      Directory.current = sub;
-      final ctx = await ProjectContext.find();
-      expect(ctx.root, tempDir.path);
+      final fs = MemoryFileSystem();
+      fs.directory('/.project').createSync(recursive: true);
+      fs.file('/.project/dew.yaml').writeAsStringSync(configYaml);
+      fs.directory('/sub').createSync(recursive: true);
+
+      final ctx = await ProjectContext.find(fs: fs, from: fs.directory('/sub'));
+      expect(ctx.root, '/');
     });
   });
 }

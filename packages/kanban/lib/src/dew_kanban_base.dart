@@ -1,4 +1,6 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 
 import 'commands/add_comment_command.dart';
 import 'commands/archive_command.dart';
@@ -18,22 +20,22 @@ import 'commands/update_command.dart';
 
 /// Top-level CLI command for all Kanban board operations.
 class KanbanCommand extends DewCommand {
-  KanbanCommand() {
-    addSubcommand(CreateCommand());
-    addSubcommand(ListCommand());
-    addSubcommand(BoardCommand());
-    addSubcommand(GetCommand());
-    addSubcommand(UpdateCommand());
-    addSubcommand(DeleteCommand());
-    addSubcommand(ArchiveCommand());
-    addSubcommand(UnarchiveCommand());
-    addSubcommand(MoveCommand());
-    addSubcommand(SearchCommand());
-    addSubcommand(AddCommentCommand());
-    addSubcommand(GetConfigCommand());
-    addSubcommand(StatsCommand());
-    addSubcommand(LinkCommand());
-    addSubcommand(UnlinkCommand());
+  KanbanCommand({FileSystem fs = const LocalFileSystem()}) {
+    addSubcommand(CreateCommand(fs: fs));
+    addSubcommand(ListCommand(fs: fs));
+    addSubcommand(BoardCommand(fs: fs));
+    addSubcommand(GetCommand(fs: fs));
+    addSubcommand(UpdateCommand(fs: fs));
+    addSubcommand(DeleteCommand(fs: fs));
+    addSubcommand(ArchiveCommand(fs: fs));
+    addSubcommand(UnarchiveCommand(fs: fs));
+    addSubcommand(MoveCommand(fs: fs));
+    addSubcommand(SearchCommand(fs: fs));
+    addSubcommand(AddCommentCommand(fs: fs));
+    addSubcommand(GetConfigCommand(fs: fs));
+    addSubcommand(StatsCommand(fs: fs));
+    addSubcommand(LinkCommand(fs: fs));
+    addSubcommand(UnlinkCommand(fs: fs));
   }
 
   @override

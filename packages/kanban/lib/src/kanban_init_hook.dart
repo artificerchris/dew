@@ -1,11 +1,15 @@
-import 'dart:io';
-
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import 'package:path/path.dart' as p;
 
 import 'kanban_config.dart';
 
 class KanbanInitHook implements DewInitHook {
+  final FileSystem _fs;
+
+  KanbanInitHook({FileSystem fs = const LocalFileSystem()}) : _fs = fs;
+
   @override
   Future<void> onInit(
     String projectRoot,
@@ -26,7 +30,7 @@ class KanbanInitHook implements DewInitHook {
   }
 
   Future<void> _createDir(String path, bool gitkeep) async {
-    final dir = Directory(path);
+    final dir = _fs.directory(path);
     final existed = await dir.exists();
     await dir.create(recursive: true);
     final rel = '.project/kanban/${p.basename(path)}';
@@ -35,7 +39,7 @@ class KanbanInitHook implements DewInitHook {
     } else {
       print('  created $rel/');
       if (gitkeep) {
-        await File(p.join(path, '.gitkeep')).writeAsString('');
+        await _fs.file(p.join(path, '.gitkeep')).writeAsString('');
         print('  created $rel/.gitkeep');
       }
     }

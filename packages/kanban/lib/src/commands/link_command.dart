@@ -1,4 +1,6 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import '../kanban_config.dart';
 import 'package:path/path.dart' as p;
 
@@ -6,7 +8,9 @@ import '../ticket.dart';
 import '../ticket_store.dart';
 
 class LinkCommand extends DewCommand with DewToolCommand {
-  LinkCommand() {
+  final FileSystem _fs;
+
+  LinkCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption('id', abbr: 'i', mandatory: true, help: 'Source ticket ID.')
       ..addOption('target', abbr: 't', mandatory: true, help: 'Target ticket ID.')
@@ -38,10 +42,11 @@ class LinkCommand extends DewCommand with DewToolCommand {
 
     if (id == targetId) throw ArgumentError('A ticket cannot be linked to itself.');
 
-    final context = await ProjectContext.find();
+    final context = await ProjectContext.find(fs: _fs);
     final store = TicketStore(
       kanbanDir: p.join(context.root, '.project', 'kanban'),
       prefix: context.config.kanban.prefix,
+      fs: context.fs,
     );
 
     await store.linkTickets(id, targetId, type);

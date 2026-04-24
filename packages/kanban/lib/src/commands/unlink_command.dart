@@ -1,11 +1,15 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import '../kanban_config.dart';
 import 'package:path/path.dart' as p;
 
 import '../ticket_store.dart';
 
 class UnlinkCommand extends DewCommand with DewToolCommand {
-  UnlinkCommand() {
+  final FileSystem _fs;
+
+  UnlinkCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption('id', abbr: 'i', mandatory: true, help: 'Source ticket ID.')
       ..addOption('target', abbr: 't', mandatory: true, help: 'Target ticket ID to remove link to.');
@@ -25,10 +29,11 @@ class UnlinkCommand extends DewCommand with DewToolCommand {
     final id = (args['id'] as String).toUpperCase();
     final targetId = (args['target'] as String).toUpperCase();
 
-    final context = await ProjectContext.find();
+    final context = await ProjectContext.find(fs: _fs);
     final store = TicketStore(
       kanbanDir: p.join(context.root, '.project', 'kanban'),
       prefix: context.config.kanban.prefix,
+      fs: context.fs,
     );
 
     await store.unlinkTickets(id, targetId);

@@ -1,13 +1,15 @@
-import 'dart:io';
-
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import '../kanban_config.dart';
 import 'package:path/path.dart' as p;
 
 import '../ticket_store.dart';
 
 class UnarchiveCommand extends DewCommand with DewToolCommand {
-  UnarchiveCommand() {
+  final FileSystem _fs;
+
+  UnarchiveCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption('id', abbr: 'i', mandatory: true, help: 'Ticket ID to unarchive.')
       ..addOption(
@@ -30,11 +32,11 @@ class UnarchiveCommand extends DewCommand with DewToolCommand {
   Future<String> callAsTool(Map<String, dynamic> args) async {
     final id = (args['id'] as String).toUpperCase();
 
-    final context = await ProjectContext.find();
+    final context = await ProjectContext.find(fs: _fs);
     final config = context.config.kanban;
     final kanbanDir = p.join(context.root, '.project', 'kanban');
 
-    final store = TicketStore(kanbanDir: kanbanDir, prefix: config.prefix);
+    final store = TicketStore(kanbanDir: kanbanDir, prefix: config.prefix, fs: context.fs);
     final ticket = await store.findById(id);
     if (ticket == null) throw ArgumentError('Ticket $id not found.');
     if (ticket.column != 'archive') return '$id is not archived.';
@@ -48,11 +50,11 @@ class UnarchiveCommand extends DewCommand with DewToolCommand {
       );
     }
 
-    final targetDir = Directory(p.join(kanbanDir, targetColumn));
+    final targetDir = context.fs.directory(p.join(kanbanDir, targetColumn));
     await targetDir.create(recursive: true);
 
-    final srcFile = File(p.join(kanbanDir, 'archive', '$id.md'));
-    final dstFile = File(p.join(targetDir.path, '$id.md'));
+    final srcFile = context.fs.file(p.join(kanbanDir, 'archive', '$id.md'));
+    final dstFile = context.fs.file(p.join(targetDir.path, '$id.md'));
     await srcFile.rename(dstFile.path);
 
     return 'Restored $id to "$targetColumn".';

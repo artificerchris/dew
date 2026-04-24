@@ -1,4 +1,6 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import '../kanban_config.dart';
 import 'package:path/path.dart' as p;
 
@@ -6,7 +8,9 @@ import '../ticket.dart';
 import '../ticket_store.dart';
 
 class BoardCommand extends DewCommand with DewToolCommand {
-  BoardCommand() {
+  final FileSystem _fs;
+
+  BoardCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption('type', abbr: 't', help: 'Filter tickets to this type.')
       ..addOption('label', help: 'Filter tickets to this label.')
@@ -28,11 +32,12 @@ class BoardCommand extends DewCommand with DewToolCommand {
     final labelFilter = args['label'] as String?;
     final milestoneFilter = args['milestone'] as String?;
 
-    final context = await ProjectContext.find();
+    final context = await ProjectContext.find(fs: _fs);
     final config = context.config.kanban;
     final store = TicketStore(
       kanbanDir: p.join(context.root, '.project', 'kanban'),
       prefix: config.prefix,
+      fs: context.fs,
     );
 
     var tickets = await store.list();

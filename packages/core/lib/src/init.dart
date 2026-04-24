@@ -1,6 +1,6 @@
-import 'dart:io';
-
 import 'package:args/command_runner.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -62,8 +62,9 @@ dew:
 
 class InitCommand extends Command<void> {
   final List<DewInitHook> _hooks;
+  final FileSystem _fs;
 
-  InitCommand(this._hooks) {
+  InitCommand(this._hooks, {FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption(
         'path',
@@ -93,8 +94,8 @@ class InitCommand extends Command<void> {
     final projectRoot = p.canonicalize(rawPath);
     final options = DewInitOptions(gitkeep: gitkeep);
 
-    final projectDir = Directory(p.join(projectRoot, '.project'));
-    final configFile = File(p.join(projectDir.path, 'dew.yaml'));
+    final projectDir = _fs.directory(p.join(projectRoot, '.project'));
+    final configFile = _fs.file(p.join(projectDir.path, 'dew.yaml'));
 
     await projectDir.create(recursive: true);
 

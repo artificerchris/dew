@@ -1,4 +1,0 @@
-# Tests that mutate Directory.current (a process-global OS call) must not run
-# concurrently across test files in the same process — the last chdir() wins
-# and can leave other suites pointing at a deleted temp directory.
-concurrency: 1

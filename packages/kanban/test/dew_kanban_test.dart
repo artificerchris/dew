@@ -1,9 +1,30 @@
-import 'dart:io';
-
 import 'package:dew_core/dew_core.dart';
 import 'package:dew_kanban/dew_kanban.dart';
-import 'package:path/path.dart' as p;
+import 'package:file/memory.dart';
 import 'package:test/test.dart';
+
+const _testConfig = '''
+dew:
+  mcp:
+    host: localhost
+    port: 9090
+  kanban:
+    prefix: T
+    ticket_types:
+      - id: task
+        name: Task
+    columns:
+      - id: todo
+        name: To Do
+        color: blue
+''';
+
+MemoryFileSystem _makeFs() {
+  final fs = MemoryFileSystem();
+  fs.directory('/.project/kanban').createSync(recursive: true);
+  fs.file('/.project/dew.yaml').writeAsStringSync(_testConfig);
+  return fs;
+}
 
 void main() {
   group('KanbanCommand', () {
@@ -75,69 +96,44 @@ void main() {
     });
 
     test('create and list tools have working handlers', () async {
-      final tempDir = await Directory.systemTemp.createTemp('kanban_tool_test_');
-      final origDir = Directory.current;
-      try {
-        await Directory(p.join(tempDir.path, '.project', 'kanban')).create(recursive: true);
-        await File(p.join(tempDir.path, '.project', 'dew.yaml')).writeAsString('''
-dew:
-  mcp:
-    host: localhost
-    port: 9090
-  kanban:
-    prefix: T
-    ticket_types:
-      - id: task
-        name: Task
-    columns:
-      - id: todo
-        name: To Do
-        color: blue
-''');
-        Directory.current = tempDir;
-        final registry = CommandRegistry();
-        registerCommands(registry);
-        final tools = {for (final t in registry.mcpTools) t.name: t};
+      final fs = _makeFs();
+      final registry = CommandRegistry();
+      registerCommands(registry, fs: fs);
+      final tools = {for (final t in registry.mcpTools) t.name: t};
 
-        final result = await tools['kanban_create_ticket']!.handler({
-          'title': 'Hello',
-          'type': 'task',
-        });
-        expect(result, contains('T-0001'));
+      final result = await tools['kanban_create_ticket']!.handler({
+        'title': 'Hello',
+        'type': 'task',
+      });
+      expect(result, contains('T-0001'));
 
-        final listResult = await tools['kanban_list_tickets']!.handler({});
-        expect(listResult, contains('T-0001'));
+      final listResult = await tools['kanban_list_tickets']!.handler({});
+      expect(listResult, contains('T-0001'));
 
-        final searchResult = await tools['kanban_search_tickets']!.handler({'query': 'Hello'});
-        expect(searchResult, contains('T-0001'));
+      final searchResult = await tools['kanban_search_tickets']!.handler({'query': 'Hello'});
+      expect(searchResult, contains('T-0001'));
 
-        await tools['kanban_add_comment']!.handler({'id': 'T-0001', 'comment': 'Nice ticket.'});
+      await tools['kanban_add_comment']!.handler({'id': 'T-0001', 'comment': 'Nice ticket.'});
 
-        final getResult = await tools['kanban_get_ticket']!.handler({'id': 'T-0001'});
-        expect(getResult, contains('Nice ticket.'));
+      final getResult = await tools['kanban_get_ticket']!.handler({'id': 'T-0001'});
+      expect(getResult, contains('Nice ticket.'));
 
-        final configResult = await tools['kanban_get_config']!.handler({});
-        expect(configResult, contains('todo'));
-        expect(configResult, contains('task'));
+      final configResult = await tools['kanban_get_config']!.handler({});
+      expect(configResult, contains('todo'));
+      expect(configResult, contains('task'));
 
-        final statsResult = await tools['kanban_stats']!.handler({});
-        expect(statsResult, contains('Total: 1'));
-        expect(statsResult, contains('todo: 1'));
-        expect(statsResult, contains('task: 1'));
-      } finally {
-        Directory.current = origDir;
-        await tempDir.delete(recursive: true);
-      }
+      final statsResult = await tools['kanban_stats']!.handler({});
+      expect(statsResult, contains('Total: 1'));
+      expect(statsResult, contains('todo: 1'));
+      expect(statsResult, contains('task: 1'));
     });
   });
 
   group('MoveCommand transition validation', () {
     test('move respects allowed_transitions when configured', () async {
-      final tempDir = await Directory.systemTemp.createTemp('kanban_transitions_test_');
-      final origDir = Directory.current;
-      try {
-        await Directory(p.join(tempDir.path, '.project', 'kanban')).create(recursive: true);
-        await File(p.join(tempDir.path, '.project', 'dew.yaml')).writeAsString('''
+      final fs = MemoryFileSystem();
+      fs.directory('/.project/kanban').createSync(recursive: true);
+      fs.file('/.project/dew.yaml').writeAsStringSync('''
 dew:
   mcp:
     host: localhost
@@ -163,48 +159,39 @@ dew:
         name: Done
         color: green
 ''');
-        Directory.current = tempDir;
-        final registry = CommandRegistry();
-        registerCommands(registry);
-        final tools = {for (final t in registry.mcpTools) t.name: t};
+      final registry = CommandRegistry();
+      registerCommands(registry, fs: fs);
+      final tools = {for (final t in registry.mcpTools) t.name: t};
 
-        await tools['kanban_create_ticket']!.handler({
-          'title': 'Flow test',
-          'type': 'task',
-        });
+      await tools['kanban_create_ticket']!.handler({
+        'title': 'Flow test',
+        'type': 'task',
+      });
 
-        // Allowed: backlog → doing
-        await expectLater(
-          tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'doing'}),
-          completes,
-        );
+      // Allowed: backlog → doing
+      await expectLater(
+        tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'doing'}),
+        completes,
+      );
 
-        // Disallowed: doing → done is allowed, but doing → backlog is also
-        // allowed; skip to testing a rejected transition:
-        // "done" has no allowed_transitions (unconstrained), but let's test
-        // that "backlog" column can't go directly to "done".
-        // Reset to backlog first.
-        await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'backlog'});
+      // Reset to backlog first.
+      await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'backlog'});
 
-        // backlog → done should throw (not in allowed_transitions).
-        await expectLater(
-          tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'done'}),
-          throwsA(isA<ArgumentError>()),
-        );
+      // backlog → done should throw (not in allowed_transitions).
+      await expectLater(
+        tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'done'}),
+        throwsA(isA<ArgumentError>()),
+      );
 
-        // Unconstrained column (done) — any target is valid.
-        await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'doing'});
-        await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'done'});
-        // done → backlog: done has no constraints, so it's allowed.
-        final result = await tools['kanban_move_ticket']!.handler({
-          'id': 'T-0001',
-          'column': 'backlog',
-        });
-        expect(result, contains('T-0001'));
-      } finally {
-        Directory.current = origDir;
-        await tempDir.delete(recursive: true);
-      }
+      // Unconstrained column (done) — any target is valid.
+      await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'doing'});
+      await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'done'});
+      // done → backlog: done has no constraints, so it's allowed.
+      final result = await tools['kanban_move_ticket']!.handler({
+        'id': 'T-0001',
+        'column': 'backlog',
+      });
+      expect(result, contains('T-0001'));
     });
   });
 
@@ -313,42 +300,30 @@ dew:
   });
 
   group('TicketStore', () {
-    late Directory tempDir;
-
-    setUp(() async {
-      tempDir = await Directory.systemTemp.createTemp('dew_kanban_test_');
-    });
-
-    tearDown(() => tempDir.delete(recursive: true));
-
-    TicketStore makeStore() => TicketStore(
-      kanbanDir: p.join(tempDir.path, 'kanban'),
+    TicketStore makeStore(MemoryFileSystem fs) => TicketStore(
+      kanbanDir: '/kanban',
       prefix: 'TEST',
+      fs: fs,
     );
 
     test('create assigns incrementing IDs', () async {
-      final store = makeStore();
-      final t1 = await store.create(
-        title: 'First',
-        type: 'task',
-        column: 'todo',
-      );
-      final t2 = await store.create(
-        title: 'Second',
-        type: 'bug',
-        column: 'todo',
-      );
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
+      final t1 = await store.create(title: 'First', type: 'task', column: 'todo');
+      final t2 = await store.create(title: 'Second', type: 'bug', column: 'todo');
       expect(t1.id, 'TEST-0001');
       expect(t2.id, 'TEST-0002');
     });
 
     test('findById returns null for missing ticket', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       expect(await store.findById('TEST-0099'), isNull);
     });
 
     test('create and list milestones/labels persist via store', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(
         title: 'Tagged',
         type: 'task',
@@ -365,7 +340,8 @@ dew:
     });
 
     test('update patches milestones and labels', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(
         title: 'Tagged',
         type: 'task',
@@ -379,7 +355,8 @@ dew:
     });
 
     test('list returns sorted tickets', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(title: 'A', type: 'task', column: 'todo');
       await store.create(title: 'B', type: 'task', column: 'todo');
       final all = await store.list();
@@ -387,14 +364,13 @@ dew:
     });
 
     test('list excludes archive by default, includes with flag', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(title: 'Active', type: 'task', column: 'todo');
       // Manually move to archive dir to simulate archived state.
-      final kanbanDir = Directory(p.join(tempDir.path, 'kanban'));
-      final archiveDir = Directory(p.join(kanbanDir.path, 'archive'));
-      await archiveDir.create(recursive: true);
-      final src = File(p.join(kanbanDir.path, 'todo', 'TEST-0001.md'));
-      await src.rename(p.join(archiveDir.path, 'TEST-0001.md'));
+      fs.directory('/kanban/archive').createSync(recursive: true);
+      final src = fs.file('/kanban/todo/TEST-0001.md');
+      await src.rename('/kanban/archive/TEST-0001.md');
 
       expect(await store.list(), isEmpty);
       final withArchive = await store.list(includeArchived: true);
@@ -403,7 +379,8 @@ dew:
     });
 
     test('update patches specified fields', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(title: 'Old', type: 'task', column: 'todo');
       final updated = await store.update('TEST-0001', title: 'New');
       expect(updated.title, 'New');
@@ -411,7 +388,8 @@ dew:
     });
 
     test('update throws for missing ticket', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       expect(
         () => store.update('TEST-0099', title: 'X'),
         throwsA(isA<ArgumentError>()),
@@ -419,14 +397,16 @@ dew:
     });
 
     test('delete removes ticket', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(title: 'Bye', type: 'task', column: 'todo');
       await store.delete('TEST-0001');
       expect(await store.findById('TEST-0001'), isNull);
     });
 
     test('delete throws for missing ticket', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       expect(
         () => store.delete('TEST-0099'),
         throwsA(isA<ArgumentError>()),
@@ -434,7 +414,8 @@ dew:
     });
 
     test('linkTickets adds typed link bidirectionally and is idempotent', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(title: 'A', type: 'task', column: 'todo');
       await store.create(title: 'B', type: 'task', column: 'todo');
       await store.linkTickets('TEST-0001', 'TEST-0002', 'blocks');
@@ -457,7 +438,8 @@ dew:
     });
 
     test('linkTickets relates_to is symmetric', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(title: 'A', type: 'task', column: 'todo');
       await store.create(title: 'B', type: 'task', column: 'todo');
       await store.linkTickets('TEST-0001', 'TEST-0002', 'relates_to');
@@ -469,7 +451,8 @@ dew:
     });
 
     test('linkTickets parent_of / child_of inverse pair', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(title: 'Epic', type: 'task', column: 'todo');
       await store.create(title: 'Story', type: 'task', column: 'todo');
       await store.linkTickets('TEST-0001', 'TEST-0002', 'parent_of');
@@ -481,13 +464,15 @@ dew:
     });
 
     test('linkTickets throws for self-link via command', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(title: 'A', type: 'task', column: 'todo');
       // Self-link guard is in the command layer, not the store.
     });
 
     test('unlinkTickets removes link on both sides', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(title: 'A', type: 'task', column: 'todo');
       await store.create(title: 'B', type: 'task', column: 'todo');
       await store.linkTickets('TEST-0001', 'TEST-0002', 'blocks');
@@ -500,7 +485,8 @@ dew:
     });
 
     test('stats returns correct counts', () async {
-      final store = makeStore();
+      final fs = MemoryFileSystem();
+      final store = makeStore(fs);
       await store.create(title: 'A', type: 'task', column: 'todo');
       await store.create(title: 'B', type: 'task', column: 'done');
       await store.create(title: 'C', type: 'bug', column: 'todo');
@@ -512,7 +498,4 @@ dew:
       expect((s['byType'] as Map)['bug'], 1);
     });
   });
-
 }
-
-
