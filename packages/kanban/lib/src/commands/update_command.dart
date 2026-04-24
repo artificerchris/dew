@@ -2,7 +2,6 @@ import 'package:dew_core/dew_core.dart';
 import 'package:file/file.dart';
 import 'package:file/local.dart';
 import '../kanban_config.dart';
-import 'package:path/path.dart' as p;
 
 import '../ticket_store.dart';
 
@@ -79,7 +78,7 @@ class UpdateCommand extends DewCommand with DewToolCommand {
     }
 
     final store = TicketStore(
-      kanbanDir: p.join(context.root, '.project', 'kanban'),
+      kanbanDir: context.dirs.kanban,
       prefix: config.prefix,
       fs: context.fs,
     );

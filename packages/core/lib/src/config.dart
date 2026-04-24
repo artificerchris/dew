@@ -14,6 +14,18 @@ class DewConfig {
   factory DewConfig.fromYaml(YamlMap yaml) => DewConfig(raw: yaml);
 }
 
+/// Path helper for well-known directories under a project root.
+///
+/// Feature packages extend this via extension methods to expose their own
+/// directories (e.g. [KanbanDirs.kanban]).
+class ProjectDirs {
+  final String _root;
+  const ProjectDirs(this._root);
+
+  /// `.project/` directory.
+  String get project => p.join(_root, '.project');
+}
+
 /// Locates the nearest project root and exposes the parsed [DewConfig].
 class ProjectContext {
   final String root;
@@ -21,6 +33,9 @@ class ProjectContext {
   final FileSystem fs;
 
   const ProjectContext({required this.root, required this.config, required this.fs});
+
+  /// Typed path helpers for this project's well-known directories.
+  ProjectDirs get dirs => ProjectDirs(root);
 
   /// Walks up from [from] (defaults to [fs.currentDirectory]) until a
   /// `.project/dew.yaml` is found.

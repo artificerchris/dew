@@ -2,7 +2,6 @@ import 'package:dew_core/dew_core.dart';
 import 'package:file/file.dart';
 import 'package:file/local.dart';
 import '../kanban_config.dart';
-import 'package:path/path.dart' as p;
 
 import '../ticket.dart';
 import '../ticket_store.dart';
@@ -38,7 +37,7 @@ class ListCommand extends DewCommand with DewToolCommand {
 
     final context = await ProjectContext.find(fs: _fs);
     final store = TicketStore(
-      kanbanDir: p.join(context.root, '.project', 'kanban'),
+      kanbanDir: context.dirs.kanban,
       prefix: context.config.kanban.prefix,
       fs: context.fs,
     );

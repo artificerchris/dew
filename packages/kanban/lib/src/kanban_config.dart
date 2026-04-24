@@ -1,4 +1,5 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 class TicketTypeConfig {
@@ -62,4 +63,10 @@ extension KanbanDewConfig on DewConfig {
               .toList(),
     );
   }
+}
+
+/// Extends [ProjectDirs] with the kanban board directory.
+extension KanbanDirs on ProjectDirs {
+  /// Absolute path to `.project/kanban/`.
+  String get kanban => p.join(project, 'kanban');
 }

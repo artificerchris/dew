@@ -9,10 +9,14 @@ class TicketStore {
   final String prefix;
   final FileSystem fs;
 
+  /// Provides the current time for ticket creation. Injectable for testing.
+  final DateTime Function() clock;
+
   const TicketStore({
     required this.kanbanDir,
     required this.prefix,
     this.fs = const LocalFileSystem(),
+    this.clock = DateTime.now,
   });
 
   Future<Ticket> create({
@@ -31,7 +35,7 @@ class TicketStore {
       title: title,
       type: type,
       column: column,
-      created: DateTime.now().toUtc(),
+      created: clock().toUtc(),
       body: body,
       comments: const [],
       milestones: milestones,
