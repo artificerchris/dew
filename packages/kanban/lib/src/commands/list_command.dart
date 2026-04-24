@@ -2,6 +2,7 @@ import 'package:dew_core/dew_core.dart';
 import '../kanban_config.dart';
 import 'package:path/path.dart' as p;
 
+import '../ticket.dart';
 import '../ticket_store.dart';
 
 class ListCommand extends DewCommand with DewToolCommand {
@@ -50,8 +51,28 @@ class ListCommand extends DewCommand with DewToolCommand {
     }
 
     if (tickets.isEmpty) return 'No tickets found.';
-    return tickets
-        .map((t) => '[${t.id}] (${t.type}) [${t.column}] ${t.title}')
-        .join('\n');
+
+    // If a column filter is applied, skip the grouping header.
+    if (columnFilter != null) {
+      return tickets.map((t) => '[${t.id}] (${t.type}) ${t.title}').join('\n');
+    }
+
+    // Group by column and emit with headers.
+    final byColumn = <String, List<Ticket>>{};
+    for (final t in tickets) {
+      (byColumn[t.column] ??= []).add(t);
+    }
+    final buf = StringBuffer();
+    var first = true;
+    for (final column in byColumn.keys) {
+      if (!first) buf.writeln();
+      first = false;
+      final count = byColumn[column]!.length;
+      buf.writeln('$column ($count)');
+      for (final t in byColumn[column]!) {
+        buf.writeln('  [${t.id}] (${t.type}) ${t.title}');
+      }
+    }
+    return buf.toString().trimRight();
   }
 }
