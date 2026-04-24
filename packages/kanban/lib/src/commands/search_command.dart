@@ -14,7 +14,9 @@ class SearchCommand extends DewCommand with DewToolCommand {
         help: 'Search query (matches title, body, and comments).',
       )
       ..addOption('column', abbr: 'c', help: 'Restrict search to this column.')
-      ..addOption('type', abbr: 't', help: 'Restrict search to this ticket type.');
+      ..addOption('type', abbr: 't', help: 'Restrict search to this ticket type.')
+      ..addOption('label', help: 'Restrict search to tickets with this label.')
+      ..addOption('milestone', help: 'Restrict search to tickets in this milestone.');
   }
 
   @override
@@ -31,6 +33,8 @@ class SearchCommand extends DewCommand with DewToolCommand {
     final query = (args['query'] as String).toLowerCase();
     final columnFilter = args['column'] as String?;
     final typeFilter = args['type'] as String?;
+    final labelFilter = args['label'] as String?;
+    final milestoneFilter = args['milestone'] as String?;
 
     final context = await ProjectContext.find();
     final store = TicketStore(
@@ -44,6 +48,12 @@ class SearchCommand extends DewCommand with DewToolCommand {
     }
     if (typeFilter != null) {
       tickets = tickets.where((t) => t.type == typeFilter).toList();
+    }
+    if (labelFilter != null) {
+      tickets = tickets.where((t) => t.labels.contains(labelFilter)).toList();
+    }
+    if (milestoneFilter != null) {
+      tickets = tickets.where((t) => t.milestones.contains(milestoneFilter)).toList();
     }
 
     final matches = tickets.where((t) {

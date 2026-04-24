@@ -36,9 +36,9 @@ class Ticket {
   final DateTime created;
   final String body;
   final List<String> comments;
-
-  /// Typed links to other tickets.
   final List<TicketLink> links;
+  final List<String> milestones;
+  final List<String> labels;
 
   const Ticket({
     required this.id,
@@ -49,6 +49,8 @@ class Ticket {
     required this.body,
     required this.comments,
     this.links = const [],
+    this.milestones = const [],
+    this.labels = const [],
   });
 
   Ticket copyWith({
@@ -58,6 +60,8 @@ class Ticket {
     String? body,
     List<String>? comments,
     List<TicketLink>? links,
+    List<String>? milestones,
+    List<String>? labels,
   }) => Ticket(
     id: id,
     title: title ?? this.title,
@@ -67,6 +71,8 @@ class Ticket {
     body: body ?? this.body,
     comments: comments ?? this.comments,
     links: links ?? this.links,
+    milestones: milestones ?? this.milestones,
+    labels: labels ?? this.labels,
   );
 
   /// Serialises the ticket to markdown with YAML frontmatter.
@@ -95,6 +101,18 @@ class Ticket {
     buf.writeln('title: ${_yamlQuote(title)}');
     buf.writeln('type: $type');
     buf.writeln('created: ${created.toUtc().toIso8601String()}');
+    if (milestones.isNotEmpty) {
+      buf.writeln('milestones:');
+      for (final m in milestones) {
+        buf.writeln('  - ${_yamlQuote(m)}');
+      }
+    }
+    if (labels.isNotEmpty) {
+      buf.writeln('labels:');
+      for (final l in labels) {
+        buf.writeln('  - ${_yamlQuote(l)}');
+      }
+    }
     if (links.isNotEmpty) {
       buf.writeln('links:');
       for (final link in links) {
@@ -146,6 +164,11 @@ class Ticket {
             .toList() ??
         const [];
 
+    List<String> parseStringList(String key) {
+      final raw = fm[key] as YamlList?;
+      return raw?.map((e) => e as String).toList() ?? const [];
+    }
+
     return Ticket(
       id: id,
       title: fm['title'] as String,
@@ -155,6 +178,8 @@ class Ticket {
       body: sections.isNotEmpty ? sections[0] : '',
       comments: sections.length > 1 ? sections.sublist(1) : const [],
       links: links,
+      milestones: parseStringList('milestones'),
+      labels: parseStringList('labels'),
     );
   }
 

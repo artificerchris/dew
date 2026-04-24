@@ -18,7 +18,12 @@ class CreateCommand extends DewCommand with DewToolCommand {
         abbr: 'c',
         help: 'Initial column. Defaults to the first configured column.',
       )
-      ..addOption('body', abbr: 'b', help: 'Ticket description.');
+      ..addOption('body', abbr: 'b', help: 'Ticket description.')
+      ..addMultiOption(
+        'milestone',
+        help: 'Milestone(s) to assign (repeatable).',
+      )
+      ..addMultiOption('label', help: 'Label(s) to assign (repeatable).');
   }
 
   @override
@@ -39,6 +44,8 @@ class CreateCommand extends DewCommand with DewToolCommand {
     final typeId = args['type'] as String;
     final columnArg = args['column'] as String?;
     final body = args['body'] as String? ?? '';
+    final milestones = _toStringList(args['milestone']);
+    final labels = _toStringList(args['label']);
 
     if (!config.ticketTypes.any((t) => t.id == typeId)) {
       throw ArgumentError(
@@ -64,7 +71,15 @@ class CreateCommand extends DewCommand with DewToolCommand {
       type: typeId,
       column: column,
       body: body,
+      milestones: milestones,
+      labels: labels,
     );
     return 'Created ${ticket.id}: ${ticket.title}';
+  }
+
+  static List<String> _toStringList(dynamic value) {
+    if (value is List) return value.cast<String>();
+    if (value is String && value.isNotEmpty) return [value];
+    return const [];
   }
 }

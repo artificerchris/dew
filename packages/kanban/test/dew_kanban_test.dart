@@ -198,6 +198,38 @@ dew:
       );
       expect(t.toFileContent(), isNot(contains('links:')));
     });
+
+    test('milestones and labels roundtrip serialisation', () {
+      final t = Ticket(
+        id: 'TEST-0005',
+        title: 'Tagged',
+        type: 'task',
+        column: 'todo',
+        created: DateTime.utc(2026, 1, 5),
+        body: '',
+        comments: const [],
+        milestones: ['v1.0', 'beta'],
+        labels: ['good first issue', 'backend'],
+      );
+      final parsed = Ticket.fromFileContent(t.id, t.toFileContent(), t.column);
+      expect(parsed.milestones, ['v1.0', 'beta']);
+      expect(parsed.labels, ['good first issue', 'backend']);
+    });
+
+    test('no milestones/labels fields when empty', () {
+      final t = Ticket(
+        id: 'TEST-0006',
+        title: 'Plain',
+        type: 'task',
+        column: 'todo',
+        created: DateTime.utc(2026, 1, 6),
+        body: '',
+        comments: const [],
+      );
+      final content = t.toFileContent();
+      expect(content, isNot(contains('milestones:')));
+      expect(content, isNot(contains('labels:')));
+    });
   });
 
   group('TicketStore', () {
@@ -233,6 +265,37 @@ dew:
     test('findById returns null for missing ticket', () async {
       final store = makeStore();
       expect(await store.findById('TEST-0099'), isNull);
+    });
+
+    test('create and list milestones/labels persist via store', () async {
+      final store = makeStore();
+      await store.create(
+        title: 'Tagged',
+        type: 'task',
+        column: 'todo',
+        milestones: ['v1.0'],
+        labels: ['enhancement'],
+      );
+      await store.create(title: 'Plain', type: 'task', column: 'todo');
+      final all = await store.list();
+      expect(all[0].milestones, ['v1.0']);
+      expect(all[0].labels, ['enhancement']);
+      expect(all[1].milestones, isEmpty);
+      expect(all[1].labels, isEmpty);
+    });
+
+    test('update patches milestones and labels', () async {
+      final store = makeStore();
+      await store.create(
+        title: 'Tagged',
+        type: 'task',
+        column: 'todo',
+        milestones: ['v1.0'],
+        labels: ['old'],
+      );
+      final updated = await store.update('TEST-0001', labels: ['new']);
+      expect(updated.milestones, ['v1.0']);
+      expect(updated.labels, ['new']);
     });
 
     test('list returns sorted tickets', () async {

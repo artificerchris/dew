@@ -15,6 +15,8 @@ class TicketStore {
     required String type,
     required String column,
     String body = '',
+    List<String> milestones = const [],
+    List<String> labels = const [],
   }) async {
     final columnDir = Directory(p.join(kanbanDir, column));
     await columnDir.create(recursive: true);
@@ -27,6 +29,8 @@ class TicketStore {
       created: DateTime.now().toUtc(),
       body: body,
       comments: const [],
+      milestones: milestones,
+      labels: labels,
     );
     await File(p.join(columnDir.path, '$id.md')).writeAsString(ticket.toFileContent());
     return ticket;
@@ -146,11 +150,20 @@ class TicketStore {
     String? type,
     String? column,
     String? body,
+    List<String>? milestones,
+    List<String>? labels,
   }) async {
     final found = await _findTicketFile(id);
     if (found == null) throw ArgumentError('Ticket $id not found.');
     final ticket = Ticket.fromFileContent(id, await found.file.readAsString(), found.column);
-    final updated = ticket.copyWith(title: title, type: type, column: column, body: body);
+    final updated = ticket.copyWith(
+      title: title,
+      type: type,
+      column: column,
+      body: body,
+      milestones: milestones,
+      labels: labels,
+    );
     if (column != null && column != ticket.column) {
       // Column changed — move the file to the new column directory.
       await found.file.delete();
