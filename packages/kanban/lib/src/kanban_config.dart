@@ -13,7 +13,16 @@ class ColumnConfig {
   final String name;
   final String color;
 
-  const ColumnConfig({required this.id, required this.name, required this.color});
+  /// Optional list of column IDs that this column can transition to.
+  /// If null/empty, all transitions are allowed.
+  final List<String> allowedTransitions;
+
+  const ColumnConfig({
+    required this.id,
+    required this.name,
+    required this.color,
+    this.allowedTransitions = const [],
+  });
 }
 
 class KanbanConfig {
@@ -44,6 +53,10 @@ extension KanbanDewConfig on DewConfig {
                   id: c['id'] as String,
                   name: c['name'] as String,
                   color: c['color'] as String,
+                  allowedTransitions: (c['allowed_transitions'] as YamlList?)
+                          ?.map((t) => t as String)
+                          .toList() ??
+                      const [],
                 ),
               )
               .toList(),

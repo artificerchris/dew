@@ -40,7 +40,23 @@ class MoveCommand extends DewCommand with DewToolCommand {
       prefix: config.prefix,
     );
 
-    final ticket = await store.update(id, column: column);
-    return 'Moved ${ticket.id} to "$column".';
+    final ticket = await store.findById(id);
+    if (ticket == null) throw ArgumentError('Ticket $id not found.');
+
+    // Check allowed_transitions if configured on the current column.
+    final currentColConfig = config.columns.firstWhere(
+      (c) => c.id == ticket.column,
+      orElse: () => ColumnConfig(id: ticket.column, name: ticket.column, color: ''),
+    );
+    if (currentColConfig.allowedTransitions.isNotEmpty &&
+        !currentColConfig.allowedTransitions.contains(column)) {
+      throw ArgumentError(
+        'Column "${ticket.column}" does not allow transitions to "$column". '
+        'Allowed: ${currentColConfig.allowedTransitions.join(', ')}',
+      );
+    }
+
+    final updated = await store.update(id, column: column);
+    return 'Moved ${updated.id} to "$column".';
   }
 }

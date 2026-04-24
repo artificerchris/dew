@@ -129,6 +129,83 @@ dew:
     });
   });
 
+  group('MoveCommand transition validation', () {
+    test('move respects allowed_transitions when configured', () async {
+      final tempDir = await Directory.systemTemp.createTemp('kanban_transitions_test_');
+      final origDir = Directory.current;
+      try {
+        await Directory(p.join(tempDir.path, '.project', 'kanban')).create(recursive: true);
+        await File(p.join(tempDir.path, '.project', 'dew.yaml')).writeAsString('''
+dew:
+  mcp:
+    host: localhost
+    port: 9090
+  kanban:
+    prefix: T
+    ticket_types:
+      - id: task
+        name: Task
+    columns:
+      - id: backlog
+        name: Backlog
+        color: grey
+        allowed_transitions:
+          - doing
+      - id: doing
+        name: Doing
+        color: blue
+        allowed_transitions:
+          - done
+          - backlog
+      - id: done
+        name: Done
+        color: green
+''');
+        Directory.current = tempDir;
+        final registry = CommandRegistry();
+        registerCommands(registry);
+        final tools = {for (final t in registry.mcpTools) t.name: t};
+
+        await tools['kanban_create_ticket']!.handler({
+          'title': 'Flow test',
+          'type': 'task',
+        });
+
+        // Allowed: backlog → doing
+        await expectLater(
+          tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'doing'}),
+          completes,
+        );
+
+        // Disallowed: doing → done is allowed, but doing → backlog is also
+        // allowed; skip to testing a rejected transition:
+        // "done" has no allowed_transitions (unconstrained), but let's test
+        // that "backlog" column can't go directly to "done".
+        // Reset to backlog first.
+        await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'backlog'});
+
+        // backlog → done should throw (not in allowed_transitions).
+        await expectLater(
+          tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'done'}),
+          throwsA(isA<ArgumentError>()),
+        );
+
+        // Unconstrained column (done) — any target is valid.
+        await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'doing'});
+        await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'done'});
+        // done → backlog: done has no constraints, so it's allowed.
+        final result = await tools['kanban_move_ticket']!.handler({
+          'id': 'T-0001',
+          'column': 'backlog',
+        });
+        expect(result, contains('T-0001'));
+      } finally {
+        Directory.current = origDir;
+        await tempDir.delete(recursive: true);
+      }
+    });
+  });
+
   group('Ticket', () {
     test('roundtrip serialisation', () {
       final t = Ticket(
