@@ -41,6 +41,12 @@ class GetCommand extends DewCommand with DewToolCommand {
     final buf = StringBuffer();
     buf.writeln('[${t.id}] (${t.type}) [${t.column}] ${t.title}');
     buf.writeln('Created: ${t.created.toLocal().toString().split('.').first}');
+    if (t.milestones.isNotEmpty) {
+      buf.writeln('Milestones: ${t.milestones.join(', ')}');
+    }
+    if (t.labels.isNotEmpty) {
+      buf.writeln('Labels: ${t.labels.join(', ')}');
+    }
     if (t.links.isNotEmpty) {
       buf.writeln();
       buf.writeln('Links:');

@@ -12,6 +12,7 @@ import 'commands/list_command.dart';
 import 'commands/move_command.dart';
 import 'commands/search_command.dart';
 import 'commands/stats_command.dart';
+import 'commands/unarchive_command.dart';
 import 'commands/unlink_command.dart';
 import 'commands/update_command.dart';
 
@@ -25,6 +26,7 @@ class KanbanCommand extends DewCommand {
     addSubcommand(UpdateCommand());
     addSubcommand(DeleteCommand());
     addSubcommand(ArchiveCommand());
+    addSubcommand(UnarchiveCommand());
     addSubcommand(MoveCommand());
     addSubcommand(SearchCommand());
     addSubcommand(AddCommentCommand());

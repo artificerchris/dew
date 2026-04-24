@@ -23,9 +23,10 @@ class ProjectContext {
 
   const ProjectContext({required this.root, required this.config});
 
-  /// Walks up from [Directory.current] until a `.project/dew.yaml` is found.
-  static Future<ProjectContext> find() async {
-    var dir = Directory.current;
+  /// Walks up from [from] (defaults to [Directory.current]) until a
+  /// `.project/dew.yaml` is found.
+  static Future<ProjectContext> find({Directory? from}) async {
+    var dir = from ?? Directory.current;
     while (true) {
       final configFile = File(p.join(dir.path, '.project', 'dew.yaml'));
       if (await configFile.exists()) {

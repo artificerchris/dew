@@ -18,7 +18,7 @@ void main() {
       expect(
         cmd.subcommands.keys,
         containsAll([
-          'create', 'list', 'board', 'get', 'update', 'delete', 'archive',
+          'create', 'list', 'board', 'get', 'update', 'delete', 'archive', 'unarchive',
           'move', 'search', 'comment', 'config', 'stats', 'link', 'unlink',
         ]),
       );
@@ -36,7 +36,7 @@ void main() {
       final registry = CommandRegistry();
       registerCommands(registry);
       final tools = registry.mcpTools;
-      expect(tools, hasLength(14));
+      expect(tools, hasLength(15));
       final names = tools.map((t) => t.name).toSet();
       expect(names, {
         'kanban_create_ticket',
@@ -46,6 +46,7 @@ void main() {
         'kanban_update_ticket',
         'kanban_delete_ticket',
         'kanban_archive_ticket',
+        'kanban_unarchive_ticket',
         'kanban_move_ticket',
         'kanban_search_tickets',
         'kanban_add_comment',

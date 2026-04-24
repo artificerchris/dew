@@ -40,11 +40,12 @@ class UpdateCommand extends DewCommand with DewToolCommand {
     final body = args['body'] as String?;
     final rawMilestones = args['milestone'] as List?;
     final milestones = rawMilestones != null && rawMilestones.isNotEmpty
-        ? rawMilestones.cast<String>()
+        ? rawMilestones.cast<String>().where((s) => s.isNotEmpty).toList()
         : null;
     final rawLabels = args['label'] as List?;
-    final labels =
-        rawLabels != null && rawLabels.isNotEmpty ? rawLabels.cast<String>() : null;
+    final labels = rawLabels != null && rawLabels.isNotEmpty
+        ? rawLabels.cast<String>().where((s) => s.isNotEmpty).toList()
+        : null;
 
     if (title == null &&
         typeId == null &&
