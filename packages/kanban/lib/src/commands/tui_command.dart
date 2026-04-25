@@ -689,6 +689,9 @@ class TuiCommand extends DewCommand {
                   default:
                     break;
                 }
+              case ControlCharacter.F1:
+                prevMode = mode;
+                mode = _Mode.help;
               default:
                 continue loop;
             }
@@ -696,8 +699,6 @@ class TuiCommand extends DewCommand {
           redraw();
           continue loop;
         }
-
-        // ── Help mode ──────────────────────────────────────────────────────
         if (mode == _Mode.help) {
           // Any key closes help
           mode = prevMode;
@@ -1180,7 +1181,7 @@ class TuiCommand extends DewCommand {
       // Column position indicator + help
       console.setForegroundColor(ConsoleColor.white);
       final pos = numCols > numVisible ? ' [${colIdx + 1}/$numCols cols]' : '';
-      const help = ' [↑↓] nav  [←→] col  [</>] move  [↵] detail  [n] new  [e] edit  [a] archive  [c] comment  [?] filter  [q] quit';
+      const help = ' [↑↓] nav  [←→] col  [</>] move  [↵] detail  [n] new  [e] edit  [D] del  [a] archive  [c] comment  [L] link  [?] filter  [F1] help  [q] quit';
       console.write(_trunc('$pos$help', w).padRight(w));
       console.resetColorAttributes();
     }
@@ -1236,7 +1237,7 @@ class TuiCommand extends DewCommand {
     final scrollInfo = lines.isNotEmpty
         ? ' [${s + 1}-${min(s + contentH, lines.length)}/${lines.length}]'
         : '';
-    console.write(' [↑↓] scroll$scrollInfo  [e] edit  [b/Esc] back  [q] quit'.padRight(w));
+    console.write(' [↑↓] scroll$scrollInfo  [e] edit  [b/Esc] back  [F1] help  [q] quit'.padRight(w));
     console.resetColorAttributes();
   }
 
@@ -1669,7 +1670,7 @@ class TuiCommand extends DewCommand {
 
     // Footer hints
     final dirtyMarker = es.isDirty ? ' ● unsaved' : '';
-    final footerHints = '[↑↓] field  [←→] value  [Enter] edit  [d] del  [s] save  [Esc] discard$dirtyMarker';
+    final footerHints = '[↑↓] field  [←→] value  [Enter] edit  [d] del  [s] save  [Esc] discard  [F1] help$dirtyMarker';
     at(modalTop + modalH - 2, modalLeft + 1, () {
       console.setForegroundColor(ConsoleColor.white);
       console.write(_trunc(footerHints, innerW));
