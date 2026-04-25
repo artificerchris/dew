@@ -11,7 +11,7 @@ import '../kanban_config.dart';
 import '../ticket.dart';
 import '../ticket_store.dart';
 
-enum _Mode { board, detail, editor }
+enum _Mode { board, detail, editor, help }
 
 // ── TUI event bus ────────────────────────────────────────────────────────────
 
@@ -30,13 +30,21 @@ final class _TuiRefresh extends _TuiEvent {
 
 // ── Inline prompt ────────────────────────────────────────────────────────────
 
-enum _PromptKind { newTitle, editTitle, addComment, archiveConfirm }
+enum _PromptKind { newTitle, editTitle, addComment, archiveConfirm, deleteConfirm, linkId, linkType }
+
+const _linkRelations = [
+  'blocks', 'is_blocked_by', 'relates_to',
+  'parent_of', 'child_of', 'duplicates', 'is_duplicated_by',
+];
 
 class _Prompt {
   final _PromptKind kind;
   final String? ticketId;
   String input;
-  _Prompt(this.kind, {this.input = '', this.ticketId});
+  int typeIdx;      // newTitle: selected ticket type index
+  int relationIdx;  // linkType: selected relation index
+  String? linkTargetId; // linkType: resolved target ticket id
+  _Prompt(this.kind, {this.input = '', this.ticketId, this.typeIdx = 0, this.relationIdx = 0, this.linkTargetId});
 }
 
 // ── Ticket editor ─────────────────────────────────────────────────────────────
@@ -231,6 +239,7 @@ class TuiCommand extends DewCommand {
     var colIdx = 0;
     var ticketIdx = 0;
     var mode = _Mode.board;
+    var prevMode = _Mode.board;
     var detailScroll = 0;
     var statusMsg = '';
     var searchQuery = '';
@@ -247,7 +256,9 @@ class TuiCommand extends DewCommand {
       console.clearScreen();
       console.resetCursorPosition();
 
-      if (mode == _Mode.editor && editorState != null) {
+      if (mode == _Mode.help) {
+        _renderHelp(console: console, w: w, h: h);
+      } else if (mode == _Mode.editor && editorState != null) {
         _renderEditor(console: console, config: config, es: editorState, w: w, h: h);
       } else if (mode == _Mode.board) {
         _renderBoard(
@@ -308,6 +319,16 @@ class TuiCommand extends DewCommand {
       }
     });
 
+    // Terminal resize (SIGWINCH) — trigger a redraw on window size change.
+    StreamSubscription<io.ProcessSignal>? sigwinchSub;
+    try {
+      sigwinchSub = io.ProcessSignal.sigwinch.watch().listen((_) {
+        if (!events.isClosed) events.add(const _TuiRefresh());
+      });
+    } catch (_) {
+      // SIGWINCH not supported on all platforms (e.g. Windows)
+    }
+
     try {
       redraw();
 
@@ -326,17 +347,22 @@ class TuiCommand extends DewCommand {
         // ── Prompt mode (inline action input) ─────────────────────────────
         if (prompt != null) {
           final p = prompt;
-          if (p.kind == _PromptKind.archiveConfirm) {
+          if (p.kind == _PromptKind.archiveConfirm || p.kind == _PromptKind.deleteConfirm) {
             if (!key.isControl) {
               if (key.char == 'y' || key.char == 'Y') {
                 try {
-                  await store.update(p.ticketId!, column: 'archive');
+                  if (p.kind == _PromptKind.archiveConfirm) {
+                    await store.update(p.ticketId!, column: 'archive');
+                    statusMsg = 'Archived ${p.ticketId}.';
+                  } else {
+                    await store.delete(p.ticketId!);
+                    statusMsg = 'Deleted ${p.ticketId}.';
+                  }
                   tickets = await store.list();
                   byColumn = _groupByColumn(tickets, config);
                   final col = config.columns[colIdx];
                   final remaining = _filtered(byColumn[col.id] ?? [], searchQuery);
                   ticketIdx = ticketIdx.clamp(0, max(0, remaining.length - 1));
-                  statusMsg = 'Archived ${p.ticketId}.';
                 } on ArgumentError catch (e) {
                   statusMsg = 'Error: ${e.message ?? e}';
                 }
@@ -351,6 +377,33 @@ class TuiCommand extends DewCommand {
             } else {
               continue loop;
             }
+          } else if (p.kind == _PromptKind.linkType) {
+            // ← / → cycle relations; Enter commits; Esc cancels
+            if (key.isControl) {
+              switch (key.controlChar) {
+                case ControlCharacter.escape:
+                  prompt = null;
+                  statusMsg = '';
+                case ControlCharacter.arrowLeft:
+                  if (p.relationIdx > 0) p.relationIdx--;
+                case ControlCharacter.arrowRight:
+                  if (p.relationIdx < _linkRelations.length - 1) p.relationIdx++;
+                case ControlCharacter.enter:
+                  try {
+                    await store.linkTickets(p.ticketId!, p.linkTargetId!, _linkRelations[p.relationIdx]);
+                    tickets = await store.list();
+                    byColumn = _groupByColumn(tickets, config);
+                    statusMsg = 'Linked ${p.ticketId} → ${p.linkTargetId} (${_linkRelations[p.relationIdx]}).';
+                  } on ArgumentError catch (e) {
+                    statusMsg = 'Error: ${e.message ?? e}';
+                  }
+                  prompt = null;
+                default:
+                  continue loop;
+              }
+            } else {
+              continue loop;
+            }
           } else {
             if (key.isControl) {
               switch (key.controlChar) {
@@ -361,9 +414,21 @@ class TuiCommand extends DewCommand {
                   if (p.input.isNotEmpty) {
                     p.input = p.input.substring(0, p.input.length - 1);
                   }
+                case ControlCharacter.arrowLeft:
+                  if (p.kind == _PromptKind.newTitle && p.typeIdx > 0) p.typeIdx--;
+                case ControlCharacter.arrowRight:
+                  if (p.kind == _PromptKind.newTitle && p.typeIdx < config.ticketTypes.length - 1) p.typeIdx++;
                 case ControlCharacter.enter:
                   final trimmed = p.input.trim();
-                  if (trimmed.isEmpty) {
+                  if (p.kind == _PromptKind.linkId) {
+                    // Validate target ticket exists, then move to relation selector
+                    final exists = tickets.any((t) => t.id == trimmed);
+                    if (!exists || trimmed.isEmpty) {
+                      statusMsg = 'Ticket "$trimmed" not found.';
+                    } else {
+                      prompt = _Prompt(_PromptKind.linkType, ticketId: p.ticketId, linkTargetId: trimmed);
+                    }
+                  } else if (trimmed.isEmpty) {
                     prompt = null;
                   } else {
                     try {
@@ -371,7 +436,7 @@ class TuiCommand extends DewCommand {
                         case _PromptKind.newTitle:
                           final col = config.columns[colIdx];
                           final type = config.ticketTypes.isNotEmpty
-                              ? config.ticketTypes.first.id
+                              ? config.ticketTypes[p.typeIdx].id
                               : 'task';
                           await store.create(title: trimmed, type: type, column: col.id);
                           tickets = await store.list();
@@ -390,7 +455,10 @@ class TuiCommand extends DewCommand {
                           byColumn = _groupByColumn(tickets, config);
                           statusMsg = 'Comment added.';
                         case _PromptKind.archiveConfirm:
-                          break; // handled above
+                        case _PromptKind.deleteConfirm:
+                        case _PromptKind.linkId:
+                        case _PromptKind.linkType:
+                          break; // handled in other branches
                       }
                     } on ArgumentError catch (e) {
                       statusMsg = 'Error: ${e.message ?? e}';
@@ -492,50 +560,6 @@ class TuiCommand extends DewCommand {
 
           if (!key.isControl) {
             switch (key.char) {
-              case 'j':
-                es.focus = _EditorField.values[
-                  (es.focus.index + 1) % _EditorField.values.length
-                ];
-                es.itemCursor = 0;
-              case 'k':
-                es.focus = _EditorField.values[
-                  (es.focus.index - 1 + _EditorField.values.length) % _EditorField.values.length
-                ];
-                es.itemCursor = 0;
-              case 'h':
-                switch (es.focus) {
-                  case _EditorField.type:
-                    final i = allTypes.indexOf(es.type);
-                    if (i > 0) es.type = allTypes[i - 1];
-                  case _EditorField.column:
-                    final i = allCols.indexOf(es.column);
-                    if (i > 0) es.column = allCols[i - 1];
-                  case _EditorField.labels:
-                    if (es.labels.isNotEmpty && es.itemCursor > 0) es.itemCursor--;
-                  case _EditorField.milestones:
-                    if (es.milestones.isNotEmpty && es.itemCursor > 0) es.itemCursor--;
-                  default:
-                    break;
-                }
-              case 'l':
-                switch (es.focus) {
-                  case _EditorField.type:
-                    final i = allTypes.indexOf(es.type);
-                    if (i < allTypes.length - 1) es.type = allTypes[i + 1];
-                  case _EditorField.column:
-                    final i = allCols.indexOf(es.column);
-                    if (i < allCols.length - 1) es.column = allCols[i + 1];
-                  case _EditorField.labels:
-                    if (es.labels.isNotEmpty && es.itemCursor < es.labels.length - 1) {
-                      es.itemCursor++;
-                    }
-                  case _EditorField.milestones:
-                    if (es.milestones.isNotEmpty && es.itemCursor < es.milestones.length - 1) {
-                      es.itemCursor++;
-                    }
-                  default:
-                    break;
-                }
               case 'd':
                 switch (es.focus) {
                   case _EditorField.labels:
@@ -673,6 +697,14 @@ class TuiCommand extends DewCommand {
           continue loop;
         }
 
+        // ── Help mode ──────────────────────────────────────────────────────
+        if (mode == _Mode.help) {
+          // Any key closes help
+          mode = prevMode;
+          redraw();
+          continue loop;
+        }
+
         // ── Board mode ─────────────────────────────────────────────────────
         if (mode == _Mode.board) {
           final col = config.columns[colIdx];
@@ -682,20 +714,6 @@ class TuiCommand extends DewCommand {
             switch (key.char) {
               case 'q':
                 break loop;
-              case 'j':
-                if (ticketIdx < colTickets.length - 1) ticketIdx++;
-              case 'k':
-                if (ticketIdx > 0) ticketIdx--;
-              case 'h':
-                if (colIdx > 0) {
-                  colIdx--;
-                  ticketIdx = 0;
-                }
-              case 'l':
-                if (colIdx < config.columns.length - 1) {
-                  colIdx++;
-                  ticketIdx = 0;
-                }
               case '<':
                 if (colIdx > 0 && colTickets.isNotEmpty) {
                   final t = colTickets[ticketIdx];
@@ -750,6 +768,16 @@ class TuiCommand extends DewCommand {
                   final t = colTickets[ticketIdx];
                   prompt = _Prompt(_PromptKind.archiveConfirm, ticketId: t.id);
                 }
+              case 'D':
+                if (colTickets.isNotEmpty) {
+                  final t = colTickets[ticketIdx];
+                  prompt = _Prompt(_PromptKind.deleteConfirm, ticketId: t.id);
+                }
+              case 'L':
+                if (colTickets.isNotEmpty) {
+                  final t = colTickets[ticketIdx];
+                  prompt = _Prompt(_PromptKind.linkId, ticketId: t.id);
+                }
               default:
                 continue loop; // skip redraw
             }
@@ -783,6 +811,9 @@ class TuiCommand extends DewCommand {
                 } else {
                   break loop;
                 }
+              case ControlCharacter.F1:
+                prevMode = mode;
+                mode = _Mode.help;
               default:
                 continue loop; // skip redraw
             }
@@ -798,18 +829,14 @@ class TuiCommand extends DewCommand {
                 mode = _Mode.board;
                 detailScroll = 0;
               case 'e':
-                final col = config.columns[colIdx];
-                final colTickets2 = _filtered(byColumn[col.id] ?? [], searchQuery);
+                final col2 = config.columns[colIdx];
+                final colTickets2 = _filtered(byColumn[col2.id] ?? [], searchQuery);
                 if (colTickets2.isNotEmpty) {
                   editorState = _EditorState.from(
                     colTickets2[ticketIdx.clamp(0, colTickets2.length - 1)],
                   );
                   mode = _Mode.editor;
                 }
-              case 'j':
-                detailScroll++;
-              case 'k':
-                if (detailScroll > 0) detailScroll--;
               default:
                 continue loop; // skip redraw
             }
@@ -824,6 +851,9 @@ class TuiCommand extends DewCommand {
                 if (detailScroll > 0) detailScroll--;
               case ControlCharacter.arrowDown:
                 detailScroll++;
+              case ControlCharacter.F1:
+                prevMode = mode;
+                mode = _Mode.help;
               default:
                 continue loop; // skip redraw
             }
@@ -835,6 +865,7 @@ class TuiCommand extends DewCommand {
     } finally {
       await keySub.cancel();
       await watchSub?.cancel();
+      await sigwinchSub?.cancel();
       debounce?.cancel();
       await events.close();
       console.rawMode = false;
@@ -923,6 +954,7 @@ class TuiCommand extends DewCommand {
       numCols: numCols,
       numVisible: numVisible,
       columns: config.columns,
+      ticketTypes: config.ticketTypes,
     );
   }
 
@@ -1099,6 +1131,7 @@ class TuiCommand extends DewCommand {
     required int numCols,
     required int numVisible,
     required List<ColumnConfig> columns,
+    required List<TicketTypeConfig> ticketTypes,
   }) {
     console.writeLine();
 
@@ -1114,12 +1147,29 @@ class TuiCommand extends DewCommand {
       console.resetColorAttributes();
     } else if (prompt != null) {
       console.setForegroundColor(ConsoleColor.brightCyan);
-      final line = switch (prompt.kind) {
-        _PromptKind.newTitle => ' New ticket title: ${prompt.input}▌',
-        _PromptKind.editTitle => ' Edit title: ${prompt.input}▌',
-        _PromptKind.addComment => ' Add comment: ${prompt.input}▌',
-        _PromptKind.archiveConfirm => ' Archive ${prompt.ticketId}? [y/N]',
-      };
+      final String line;
+      switch (prompt.kind) {
+        case _PromptKind.newTitle:
+          if (ticketTypes.length > 1) {
+            final typeName = ticketTypes[prompt.typeIdx].name;
+            line = ' New [◀ $typeName ▶] title: ${prompt.input}▌';
+          } else {
+            line = ' New ticket title: ${prompt.input}▌';
+          }
+        case _PromptKind.editTitle:
+          line = ' Edit title: ${prompt.input}▌';
+        case _PromptKind.addComment:
+          line = ' Add comment: ${prompt.input}▌';
+        case _PromptKind.archiveConfirm:
+          line = ' Archive ${prompt.ticketId}? [y/N]';
+        case _PromptKind.deleteConfirm:
+          line = ' ⚠ Delete ${prompt.ticketId} permanently? [y/N]';
+        case _PromptKind.linkId:
+          line = ' Link ${prompt.ticketId} to ticket ID: ${prompt.input}▌';
+        case _PromptKind.linkType:
+          final rel = _linkRelations[prompt.relationIdx];
+          line = ' ${prompt.ticketId} [◀ $rel ▶] ${prompt.linkTargetId}  (Enter to confirm)';
+      }
       console.write(_trunc(line, w).padRight(w));
       console.resetColorAttributes();
     } else if (searchMode) {
@@ -1130,7 +1180,7 @@ class TuiCommand extends DewCommand {
       // Column position indicator + help
       console.setForegroundColor(ConsoleColor.white);
       final pos = numCols > numVisible ? ' [${colIdx + 1}/$numCols cols]' : '';
-      const help = ' [j/k] nav  [h/l] col  [</>] move  [↵] detail  [n] new  [e] edit  [a] archive  [c] comment  [?] filter  [q] quit';
+      const help = ' [↑↓] nav  [←→] col  [</>] move  [↵] detail  [n] new  [e] edit  [a] archive  [c] comment  [?] filter  [q] quit';
       console.write(_trunc('$pos$help', w).padRight(w));
       console.resetColorAttributes();
     }
@@ -1186,7 +1236,7 @@ class TuiCommand extends DewCommand {
     final scrollInfo = lines.isNotEmpty
         ? ' [${s + 1}-${min(s + contentH, lines.length)}/${lines.length}]'
         : '';
-    console.write(' [j/k↑↓] scroll$scrollInfo  [e] edit  [b/Esc] back  [q] quit'.padRight(w));
+    console.write(' [↑↓] scroll$scrollInfo  [e] edit  [b/Esc] back  [q] quit'.padRight(w));
     console.resetColorAttributes();
   }
 
@@ -1328,6 +1378,125 @@ class TuiCommand extends DewCommand {
     if (s.length <= maxLen) return s;
     if (maxLen == 1) return s[0];
     return '${s.substring(0, maxLen - 1)}…';
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Help overlay modal
+  // ══════════════════════════════════════════════════════════════════════════
+
+  static void _renderHelp({
+    required Console console,
+    required int w,
+    required int h,
+  }) {
+    // Draw dim background
+    console.setForegroundColor(ConsoleColor.white);
+    for (var r = 0; r < h; r++) {
+      console.cursorPosition = Coordinate(r, 0);
+      console.write('░' * w);
+    }
+
+    const sections = [
+      ('Board', [
+        ('↑ / ↓',      'Navigate tickets'),
+        ('← / →',      'Switch columns'),
+        ('< / >',      'Move ticket left / right'),
+        ('Enter',       'Open ticket detail'),
+        ('n',           'New ticket'),
+        ('e',           'Edit ticket'),
+        ('a',           'Archive ticket'),
+        ('D',           'Delete ticket'),
+        ('c',           'Add comment'),
+        ('L',           'Link ticket'),
+        ('?',           'Filter / search'),
+        ('q / Esc',     'Quit'),
+        ('F1',          'This help'),
+      ]),
+      ('Detail', [
+        ('↑ / ↓',      'Scroll'),
+        ('e',           'Edit ticket'),
+        ('b / Esc',     'Back to board'),
+        ('q',           'Quit'),
+        ('F1',          'This help'),
+      ]),
+      ('Editor', [
+        ('↑ / ↓',      'Navigate fields'),
+        ('← / →',      'Cycle selector values'),
+        ('Enter',       'Edit text / open body editor'),
+        ('d',           'Delete selected item'),
+        ('s',           'Save changes'),
+        ('Esc',         'Discard & close'),
+      ]),
+    ];
+
+    // Compute modal size
+    const labelW = 12;
+    const descW = 36;
+    const innerW = labelW + 3 + descW; // "key   desc"
+    final modalW = min(w - 4, innerW + 4);
+    final totalRows = sections.fold(0, (s, sec) => s + sec.$2.length + 2); // +2 per section: header + blank
+    final modalH = min(h - 4, totalRows + 4);
+    final modalLeft = max(0, (w - modalW) ~/ 2);
+    final modalTop = max(0, (h - modalH) ~/ 2);
+    final innerWActual = modalW - 2;
+
+    // Draw box
+    console.setForegroundColor(ConsoleColor.brightCyan);
+    console.cursorPosition = Coordinate(modalTop, modalLeft);
+    console.write('╔${'═' * innerWActual}╗');
+    // Title row
+    const title = ' Keyboard Shortcuts ';
+    console.cursorPosition = Coordinate(modalTop + 1, modalLeft);
+    console.setBackgroundColor(ConsoleColor.cyan);
+    console.setForegroundColor(ConsoleColor.black);
+    console.write('║${title.padRight(innerWActual).substring(0, innerWActual)}║');
+    console.resetColorAttributes();
+    // Second header row
+    console.setForegroundColor(ConsoleColor.brightCyan);
+    console.cursorPosition = Coordinate(modalTop + 2, modalLeft);
+    console.write('╠${'═' * innerWActual}╣');
+
+    var row = modalTop + 3;
+    for (final (secName, bindings) in sections) {
+      if (row >= modalTop + modalH - 1) break;
+      // Section header
+      console.cursorPosition = Coordinate(row, modalLeft);
+      console.setForegroundColor(ConsoleColor.brightCyan);
+      final secLine = ' ▸ $secName';
+      console.write('║${secLine.padRight(innerWActual).substring(0, innerWActual)}║');
+      row++;
+
+      for (final (key, desc) in bindings) {
+        if (row >= modalTop + modalH - 1) break;
+        console.cursorPosition = Coordinate(row, modalLeft);
+        final keyPart = key.padLeft(labelW);
+        final line = '  $keyPart  $desc';
+        console.setForegroundColor(ConsoleColor.white);
+        console.write('║${line.padRight(innerWActual).substring(0, innerWActual)}║');
+        row++;
+      }
+
+      // Blank separator line
+      if (row < modalTop + modalH - 1) {
+        console.cursorPosition = Coordinate(row, modalLeft);
+        console.setForegroundColor(ConsoleColor.brightCyan);
+        console.write('║${' ' * innerWActual}║');
+        row++;
+      }
+    }
+
+    // Bottom border
+    console.cursorPosition = Coordinate(modalTop + modalH - 1, modalLeft);
+    console.setForegroundColor(ConsoleColor.brightCyan);
+    console.write('╚${'═' * innerWActual}╝');
+
+    // Footer hint
+    const hint = ' Press any key to close ';
+    console.cursorPosition = Coordinate(modalTop + modalH - 1, modalLeft + (modalW - hint.length) ~/ 2);
+    console.setForegroundColor(ConsoleColor.white);
+    console.write(hint);
+
+    console.resetColorAttributes();
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -1500,7 +1669,7 @@ class TuiCommand extends DewCommand {
 
     // Footer hints
     final dirtyMarker = es.isDirty ? ' ● unsaved' : '';
-    final footerHints = '[j/k↑↓] field  [h/l←→] value  [Enter] edit  [d] del  [s] save  [Esc] discard$dirtyMarker';
+    final footerHints = '[↑↓] field  [←→] value  [Enter] edit  [d] del  [s] save  [Esc] discard$dirtyMarker';
     at(modalTop + modalH - 2, modalLeft + 1, () {
       console.setForegroundColor(ConsoleColor.white);
       console.write(_trunc(footerHints, innerW));
