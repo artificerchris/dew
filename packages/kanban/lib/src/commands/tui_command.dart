@@ -653,9 +653,9 @@ class TuiCommand extends DewCommand {
       bold: isSelected,
     ));
 
-    // Underline bar — ▔ (upper-eighth-block) for selected, thin ─ for inactive
+    // Top border of the ticket box — proper corners so the box closes cleanly
     cells.add(_Cell(
-      isSelected ? '▔' * colW : '─' * colW,
+      '┌${'─' * innerW}┐',
       fg: isSelected ? color : ConsoleColor.brightBlack,
     ));
 
