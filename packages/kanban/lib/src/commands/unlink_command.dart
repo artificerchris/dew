@@ -11,7 +11,12 @@ class UnlinkCommand extends DewCommand with DewToolCommand {
   UnlinkCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption('id', abbr: 'i', mandatory: true, help: 'Source ticket ID.')
-      ..addOption('target', abbr: 't', mandatory: true, help: 'Target ticket ID to remove link to.');
+      ..addOption(
+        'target',
+        abbr: 't',
+        mandatory: true,
+        help: 'Target ticket ID to remove link to.',
+      );
   }
 
   @override

@@ -10,14 +10,20 @@ class ArchiveCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
   ArchiveCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
-    argParser.addOption('id', abbr: 'i', mandatory: true, help: 'Ticket ID to archive.');
+    argParser.addOption(
+      'id',
+      abbr: 'i',
+      mandatory: true,
+      help: 'Ticket ID to archive.',
+    );
   }
 
   @override
   final String name = 'archive';
 
   @override
-  final String description = 'Archive a ticket (moves it to the archive column).';
+  final String description =
+      'Archive a ticket (moves it to the archive column).';
 
   @override
   final String toolName = 'kanban_archive_ticket';
@@ -30,7 +36,11 @@ class ArchiveCommand extends DewCommand with DewToolCommand {
     final config = context.config.kanban;
     final kanbanDir = context.dirs.kanban;
 
-    final store = TicketStore(kanbanDir: kanbanDir, prefix: config.prefix, fs: context.fs);
+    final store = TicketStore(
+      kanbanDir: kanbanDir,
+      prefix: config.prefix,
+      fs: context.fs,
+    );
     final ticket = await store.findById(id);
     if (ticket == null) throw ArgumentError('Ticket $id not found.');
     if (ticket.column == 'archive') return '$id is already archived.';

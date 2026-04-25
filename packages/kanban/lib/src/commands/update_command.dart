@@ -29,7 +29,8 @@ class UpdateCommand extends DewCommand with DewToolCommand {
   final String name = 'update';
 
   @override
-  final String description = 'Update one or more fields on an existing kanban ticket.';
+  final String description =
+      'Update one or more fields on an existing kanban ticket.';
 
   @override
   final String toolName = 'kanban_update_ticket';

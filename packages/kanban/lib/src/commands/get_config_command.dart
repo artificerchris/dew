@@ -11,7 +11,8 @@ class GetConfigCommand extends DewCommand with DewToolCommand {
   final String name = 'config';
 
   @override
-  final String description = 'Show the kanban configuration (columns and ticket types).';
+  final String description =
+      'Show the kanban configuration (columns and ticket types).';
 
   @override
   final String toolName = 'kanban_get_config';
@@ -22,7 +23,9 @@ class GetConfigCommand extends DewCommand with DewToolCommand {
     final config = context.config.kanban;
 
     final columns = config.columns.map((c) => '${c.id} (${c.name})').join(', ');
-    final types = config.ticketTypes.map((t) => '${t.id} (${t.name})').join(', ');
+    final types = config.ticketTypes
+        .map((t) => '${t.id} (${t.name})')
+        .join(', ');
 
     return 'Columns: $columns\nTypes: $types';
   }

@@ -11,18 +11,27 @@ class ListCommand extends DewCommand with DewToolCommand {
 
   ListCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
-      ..addOption('column', abbr: 'c', help: 'Filter to tickets in this column.')
+      ..addOption(
+        'column',
+        abbr: 'c',
+        help: 'Filter to tickets in this column.',
+      )
       ..addOption('type', abbr: 't', help: 'Filter to tickets of this type.')
       ..addOption('label', help: 'Filter to tickets with this label.')
       ..addOption('milestone', help: 'Filter to tickets in this milestone.')
-      ..addFlag('include-archived', help: 'Include archived tickets.', negatable: false);
+      ..addFlag(
+        'include-archived',
+        help: 'Include archived tickets.',
+        negatable: false,
+      );
   }
 
   @override
   final String name = 'list';
 
   @override
-  final String description = 'List kanban tickets, optionally filtered by column or type.';
+  final String description =
+      'List kanban tickets, optionally filtered by column or type.';
 
   @override
   final String toolName = 'kanban_list_tickets';
@@ -53,7 +62,9 @@ class ListCommand extends DewCommand with DewToolCommand {
       tickets = tickets.where((t) => t.labels.contains(labelFilter)).toList();
     }
     if (milestoneFilter != null) {
-      tickets = tickets.where((t) => t.milestones.contains(milestoneFilter)).toList();
+      tickets = tickets
+          .where((t) => t.milestones.contains(milestoneFilter))
+          .toList();
     }
 
     if (tickets.isEmpty) return 'No tickets found.';

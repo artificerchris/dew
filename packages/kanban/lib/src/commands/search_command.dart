@@ -17,17 +17,29 @@ class SearchCommand extends DewCommand with DewToolCommand {
         help: 'Search query (matches title, body, and comments).',
       )
       ..addOption('column', abbr: 'c', help: 'Restrict search to this column.')
-      ..addOption('type', abbr: 't', help: 'Restrict search to this ticket type.')
+      ..addOption(
+        'type',
+        abbr: 't',
+        help: 'Restrict search to this ticket type.',
+      )
       ..addOption('label', help: 'Restrict search to tickets with this label.')
-      ..addOption('milestone', help: 'Restrict search to tickets in this milestone.')
-      ..addFlag('include-archived', help: 'Include archived tickets.', negatable: false);
+      ..addOption(
+        'milestone',
+        help: 'Restrict search to tickets in this milestone.',
+      )
+      ..addFlag(
+        'include-archived',
+        help: 'Include archived tickets.',
+        negatable: false,
+      );
   }
 
   @override
   final String name = 'search';
 
   @override
-  final String description = 'Search tickets by text across title, body, and comments.';
+  final String description =
+      'Search tickets by text across title, body, and comments.';
 
   @override
   final String toolName = 'kanban_search_tickets';
@@ -59,7 +71,9 @@ class SearchCommand extends DewCommand with DewToolCommand {
       tickets = tickets.where((t) => t.labels.contains(labelFilter)).toList();
     }
     if (milestoneFilter != null) {
-      tickets = tickets.where((t) => t.milestones.contains(milestoneFilter)).toList();
+      tickets = tickets
+          .where((t) => t.milestones.contains(milestoneFilter))
+          .toList();
     }
 
     final matches = tickets.where((t) {

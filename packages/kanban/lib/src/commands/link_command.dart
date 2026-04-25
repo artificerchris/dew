@@ -12,7 +12,12 @@ class LinkCommand extends DewCommand with DewToolCommand {
   LinkCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption('id', abbr: 'i', mandatory: true, help: 'Source ticket ID.')
-      ..addOption('target', abbr: 't', mandatory: true, help: 'Target ticket ID.')
+      ..addOption(
+        'target',
+        abbr: 't',
+        mandatory: true,
+        help: 'Target ticket ID.',
+      )
       ..addOption(
         'type',
         abbr: 'y',
@@ -39,7 +44,8 @@ class LinkCommand extends DewCommand with DewToolCommand {
     final targetId = (args['target'] as String).toUpperCase();
     final type = args['type'] as String;
 
-    if (id == targetId) throw ArgumentError('A ticket cannot be linked to itself.');
+    if (id == targetId)
+      throw ArgumentError('A ticket cannot be linked to itself.');
 
     final context = await ProjectContext.find(fs: _fs);
     final store = TicketStore(

@@ -142,26 +142,30 @@ class Ticket {
     }
     final fmEnd = content.indexOf('\n---\n', 4);
     if (fmEnd == -1) {
-      throw FormatException('Ticket file $id is missing closing frontmatter ---');
+      throw FormatException(
+        'Ticket file $id is missing closing frontmatter ---',
+      );
     }
 
     final fm = loadYaml(content.substring(4, fmEnd)) as YamlMap;
 
     // Everything after the closing \n---\n, split into body + comments.
     final rest = content.substring(fmEnd + 5);
-    final sections =
-        rest.split('\n---\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    final sections = rest
+        .split('\n---\n')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
 
     final rawLinks = fm['links'] as YamlList?;
-    final links = rawLinks
-            ?.map((entry) {
-              final map = entry as YamlMap;
-              return TicketLink(
-                targetId: map['id'] as String,
-                type: map['type'] as String,
-              );
-            })
-            .toList() ??
+    final links =
+        rawLinks?.map((entry) {
+          final map = entry as YamlMap;
+          return TicketLink(
+            targetId: map['id'] as String,
+            type: map['type'] as String,
+          );
+        }).toList() ??
         const [];
 
     List<String> parseStringList(String key) {
@@ -186,7 +190,8 @@ class Ticket {
   /// Wraps [value] in double quotes if it contains characters that would
   /// confuse a YAML parser (colon-space, leading/trailing whitespace, etc.).
   static String _yamlQuote(String value) {
-    final needsQuoting = value.contains(': ') ||
+    final needsQuoting =
+        value.contains(': ') ||
         value.contains(' #') ||
         value.startsWith('"') ||
         value.startsWith("'") ||
@@ -196,4 +201,3 @@ class Ticket {
     return '"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"';
   }
 }
-

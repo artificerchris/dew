@@ -29,9 +29,6 @@ class ServeCommand extends DewCommand {
 
     // stdioChannel subscribes to stdin; do not touch stdin after this point.
     // The Dart event loop keeps the process alive until the client disconnects.
-    DewMcpServer(
-      stdioChannel(input: io.stdin, output: io.stdout),
-      tools,
-    );
+    DewMcpServer(stdioChannel(input: io.stdin, output: io.stdout), tools);
   }
 }

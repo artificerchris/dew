@@ -43,24 +43,28 @@ extension KanbanDewConfig on DewConfig {
     final kanbanYaml = (raw['dew'] as YamlMap)['kanban'] as YamlMap;
     return KanbanConfig(
       prefix: kanbanYaml['prefix'] as String,
-      ticketTypes:
-          (kanbanYaml['ticket_types'] as YamlList)
-              .map((t) => TicketTypeConfig(id: t['id'] as String, name: t['name'] as String))
-              .toList(),
-      columns:
-          (kanbanYaml['columns'] as YamlList)
-              .map(
-                (c) => ColumnConfig(
-                  id: c['id'] as String,
-                  name: c['name'] as String,
-                  color: c['color'] as String,
-                  allowedTransitions: (c['allowed_transitions'] as YamlList?)
-                          ?.map((t) => t as String)
-                          .toList() ??
-                      const [],
-                ),
-              )
-              .toList(),
+      ticketTypes: (kanbanYaml['ticket_types'] as YamlList)
+          .map(
+            (t) => TicketTypeConfig(
+              id: t['id'] as String,
+              name: t['name'] as String,
+            ),
+          )
+          .toList(),
+      columns: (kanbanYaml['columns'] as YamlList)
+          .map(
+            (c) => ColumnConfig(
+              id: c['id'] as String,
+              name: c['name'] as String,
+              color: c['color'] as String,
+              allowedTransitions:
+                  (c['allowed_transitions'] as YamlList?)
+                      ?.map((t) => t as String)
+                      .toList() ??
+                  const [],
+            ),
+          )
+          .toList(),
     );
   }
 }

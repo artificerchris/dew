@@ -1,0 +1,55 @@
+import 'package:args/command_runner.dart';
+import 'package:dew_core/dew_core.dart';
+import 'package:dew_kanban/dew_kanban.dart' as kanban;
+import 'package:dew_mcp/dew_mcp.dart' as mcp;
+import 'package:test/test.dart';
+
+/// Builds the same CommandRunner as bin/dew.dart without actually running it.
+CommandRunner<void> buildRunner() {
+  final commandRegistry = CommandRegistry();
+  kanban.registerCommands(commandRegistry);
+  mcp.registerCommands(commandRegistry);
+
+  final runner = CommandRunner<void>('dew', 'A project management tool.');
+  runner.addCommand(InitCommand(commandRegistry.initHooks));
+  for (final command in commandRegistry.commands) {
+    runner.addCommand(command);
+  }
+  return runner;
+}
+
+void main() {
+  group('CLI CommandRunner', () {
+    test('builds without throwing', () {
+      expect(buildRunner, returnsNormally);
+    });
+
+    test('has kanban, init, and mcp commands registered', () {
+      final runner = buildRunner();
+      expect(runner.commands.keys, containsAll(['kanban', 'init', 'mcp']));
+    });
+
+    test('--help flag does not throw', () async {
+      final runner = buildRunner();
+      await expectLater(runner.run(['--help']), completes);
+    });
+
+    test('unknown command throws UsageException', () async {
+      final runner = buildRunner();
+      await expectLater(
+        runner.run(['totally-unknown-command']),
+        throwsA(isA<UsageException>()),
+      );
+    });
+
+    test('kanban subcommand --help does not throw', () async {
+      final runner = buildRunner();
+      await expectLater(runner.run(['help', 'kanban']), completes);
+    });
+
+    test('mcp subcommand --help does not throw', () async {
+      final runner = buildRunner();
+      await expectLater(runner.run(['help', 'mcp']), completes);
+    });
+  });
+}

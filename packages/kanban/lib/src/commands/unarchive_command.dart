@@ -11,7 +11,12 @@ class UnarchiveCommand extends DewCommand with DewToolCommand {
 
   UnarchiveCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
-      ..addOption('id', abbr: 'i', mandatory: true, help: 'Ticket ID to unarchive.')
+      ..addOption(
+        'id',
+        abbr: 'i',
+        mandatory: true,
+        help: 'Ticket ID to unarchive.',
+      )
       ..addOption(
         'column',
         abbr: 'c',
@@ -36,7 +41,11 @@ class UnarchiveCommand extends DewCommand with DewToolCommand {
     final config = context.config.kanban;
     final kanbanDir = context.dirs.kanban;
 
-    final store = TicketStore(kanbanDir: kanbanDir, prefix: config.prefix, fs: context.fs);
+    final store = TicketStore(
+      kanbanDir: kanbanDir,
+      prefix: config.prefix,
+      fs: context.fs,
+    );
     final ticket = await store.findById(id);
     if (ticket == null) throw ArgumentError('Ticket $id not found.');
     if (ticket.column != 'archive') return '$id is not archived.';

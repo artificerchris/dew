@@ -55,22 +55,26 @@ void main(List<String> args) async {
     protocolLogSink: protocolLog.sink,
   );
 
-  unawaited(connection.done.then((_) {
-    stderr.writeln('[client] Connection closed.');
-    process.kill();
-  }));
+  unawaited(
+    connection.done.then((_) {
+      stderr.writeln('[client] Connection closed.');
+      process.kill();
+    }),
+  );
 
   // --- Initialise ---
   print('Sending initialize...');
   late InitializeResult initResult;
   try {
-    initResult = await connection.initialize(
-      InitializeRequest(
-        protocolVersion: ProtocolVersion.latestSupported,
-        capabilities: client.capabilities,
-        clientInfo: client.implementation,
-      ),
-    ).timeout(const Duration(seconds: 5));
+    initResult = await connection
+        .initialize(
+          InitializeRequest(
+            protocolVersion: ProtocolVersion.latestSupported,
+            capabilities: client.capabilities,
+            clientInfo: client.implementation,
+          ),
+        )
+        .timeout(const Duration(seconds: 5));
   } on TimeoutException {
     stderr.writeln('[client] Timed out waiting for initialize response.');
     process.kill();
@@ -81,7 +85,9 @@ void main(List<String> args) async {
     exit(1);
   }
 
-  print('Server: ${initResult.serverInfo.name} ${initResult.serverInfo.version}');
+  print(
+    'Server: ${initResult.serverInfo.name} ${initResult.serverInfo.version}',
+  );
   print('Protocol: ${initResult.protocolVersion}');
   print('');
 
@@ -114,7 +120,9 @@ void main(List<String> args) async {
       CallToolRequest(name: 'kanban_list_tickets', arguments: {}),
     );
     if (result.isError == true) {
-      print('  Error: ${result.content.map((c) => (c as TextContent).text).join()}');
+      print(
+        '  Error: ${result.content.map((c) => (c as TextContent).text).join()}',
+      );
     } else {
       print('  Result:');
       for (final c in result.content) {

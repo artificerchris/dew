@@ -162,6 +162,7 @@ class CommandRegistry {
         collect(sub);
       }
     }
+
     for (final cmd in _commands) {
       collect(cmd);
     }

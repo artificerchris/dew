@@ -18,6 +18,7 @@ dev_dependencies:
   lints: ^6.0.0
   melos: ^7.0.0
 
+
 melos:
   scripts:
     analyze:

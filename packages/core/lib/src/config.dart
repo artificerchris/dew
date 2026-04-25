@@ -35,7 +35,11 @@ class ProjectContext {
   final DewConfig config;
   final FileSystem fs;
 
-  const ProjectContext({required this.root, required this.config, required this.fs});
+  const ProjectContext({
+    required this.root,
+    required this.config,
+    required this.fs,
+  });
 
   /// Typed path helpers for this project's well-known directories.
   ProjectDirs get dirs => ProjectDirs(root);

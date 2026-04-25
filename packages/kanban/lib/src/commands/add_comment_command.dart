@@ -10,8 +10,18 @@ class AddCommentCommand extends DewCommand with DewToolCommand {
 
   AddCommentCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
-      ..addOption('id', abbr: 'i', mandatory: true, help: 'Ticket ID (e.g. DEW-0001).')
-      ..addOption('comment', abbr: 'm', mandatory: true, help: 'Comment text to append.');
+      ..addOption(
+        'id',
+        abbr: 'i',
+        mandatory: true,
+        help: 'Ticket ID (e.g. DEW-0001).',
+      )
+      ..addOption(
+        'comment',
+        abbr: 'm',
+        mandatory: true,
+        help: 'Comment text to append.',
+      );
   }
 
   @override

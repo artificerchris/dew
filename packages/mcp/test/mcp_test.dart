@@ -1,4 +1,5 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:dew_kanban/dew_kanban.dart' as kanban;
 import 'package:dew_mcp/dew_mcp.dart';
 import 'package:test/test.dart';
 
@@ -34,6 +35,66 @@ void main() {
       expect(registry.mcpTools.first.name, 'stub_tool');
     });
   });
+
+  group('Kanban MCP tools via CommandRegistry', () {
+    late List<McpTool> tools;
+
+    setUp(() {
+      final registry = CommandRegistry();
+      kanban.registerCommands(registry);
+      tools = registry.mcpTools;
+    });
+
+    test('all 15 expected tool names are registered', () {
+      expect(tools, hasLength(15));
+      expect(tools.map((t) => t.name).toSet(), {
+        'kanban_create_ticket',
+        'kanban_list_tickets',
+        'kanban_board',
+        'kanban_get_ticket',
+        'kanban_update_ticket',
+        'kanban_delete_ticket',
+        'kanban_archive_ticket',
+        'kanban_unarchive_ticket',
+        'kanban_move_ticket',
+        'kanban_search_tickets',
+        'kanban_add_comment',
+        'kanban_get_config',
+        'kanban_stats',
+        'kanban_link_tickets',
+        'kanban_unlink_tickets',
+      });
+    });
+
+    test('kanban_create_ticket schema requires title and type', () {
+      final create = tools.firstWhere((t) => t.name == 'kanban_create_ticket');
+      final required = create.inputSchema['required'] as List;
+      expect(required, containsAll(['title', 'type']));
+    });
+
+    test('kanban_add_comment schema requires id and comment', () {
+      final comment = tools.firstWhere((t) => t.name == 'kanban_add_comment');
+      final required = comment.inputSchema['required'] as List;
+      expect(required, containsAll(['id', 'comment']));
+    });
+
+    test('kanban_search_tickets schema requires query', () {
+      final search = tools.firstWhere((t) => t.name == 'kanban_search_tickets');
+      final required = search.inputSchema['required'] as List;
+      expect(required, contains('query'));
+    });
+
+    test('all tool names follow the snake_case kanban_ prefix pattern', () {
+      final pattern = RegExp(r'^kanban_[a-z]+(_[a-z]+)*$');
+      for (final tool in tools) {
+        expect(
+          pattern.hasMatch(tool.name),
+          isTrue,
+          reason: '${tool.name} does not match snake_case kanban_ pattern',
+        );
+      }
+    });
+  });
 }
 
 class _StubToolCommand extends DewCommand with DewToolCommand {
@@ -64,4 +125,3 @@ class _StubParentCommand extends DewCommand {
   @override
   Future<void> run() async => printUsage();
 }
-

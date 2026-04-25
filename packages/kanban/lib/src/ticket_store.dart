@@ -41,14 +41,20 @@ class TicketStore {
       milestones: milestones,
       labels: labels,
     );
-    await fs.file(p.join(columnDir.path, '$id.md')).writeAsString(ticket.toFileContent());
+    await fs
+        .file(p.join(columnDir.path, '$id.md'))
+        .writeAsString(ticket.toFileContent());
     return ticket;
   }
 
   Future<Ticket?> findById(String id) async {
     final found = await _findTicketFile(id);
     if (found == null) return null;
-    return Ticket.fromFileContent(id, await found.file.readAsString(), found.column);
+    return Ticket.fromFileContent(
+      id,
+      await found.file.readAsString(),
+      found.column,
+    );
   }
 
   Future<List<Ticket>> list({bool includeArchived = false}) async {
@@ -76,7 +82,11 @@ class TicketStore {
   Future<Ticket> addComment(String id, String comment) async {
     final found = await _findTicketFile(id);
     if (found == null) throw ArgumentError('Ticket $id not found.');
-    final ticket = Ticket.fromFileContent(id, await found.file.readAsString(), found.column);
+    final ticket = Ticket.fromFileContent(
+      id,
+      await found.file.readAsString(),
+      found.column,
+    );
     final updated = ticket.copyWith(comments: [...ticket.comments, comment]);
     await found.file.writeAsString(updated.toFileContent());
     return updated;
@@ -97,7 +107,10 @@ class TicketStore {
     // Forward link (idempotent — skip if already linked to same target).
     if (!ticket.links.any((l) => l.targetId == targetId)) {
       final updated = ticket.copyWith(
-        links: [...ticket.links, TicketLink(targetId: targetId, type: type)],
+        links: [
+          ...ticket.links,
+          TicketLink(targetId: targetId, type: type),
+        ],
       );
       final found = (await _findTicketFile(id))!;
       await found.file.writeAsString(updated.toFileContent());
@@ -107,7 +120,10 @@ class TicketStore {
     final inverseType = linkTypeInverses[type]!;
     if (!target.links.any((l) => l.targetId == id)) {
       final updatedTarget = target.copyWith(
-        links: [...target.links, TicketLink(targetId: id, type: inverseType)],
+        links: [
+          ...target.links,
+          TicketLink(targetId: id, type: inverseType),
+        ],
       );
       final foundTarget = (await _findTicketFile(targetId))!;
       await foundTarget.file.writeAsString(updatedTarget.toFileContent());
@@ -119,7 +135,11 @@ class TicketStore {
   Future<Ticket> unlinkTickets(String id, String targetId) async {
     final found = await _findTicketFile(id);
     if (found == null) throw ArgumentError('Ticket $id not found.');
-    final ticket = Ticket.fromFileContent(id, await found.file.readAsString(), found.column);
+    final ticket = Ticket.fromFileContent(
+      id,
+      await found.file.readAsString(),
+      found.column,
+    );
     final updated = ticket.copyWith(
       links: ticket.links.where((l) => l.targetId != targetId).toList(),
     );
@@ -165,7 +185,11 @@ class TicketStore {
   }) async {
     final found = await _findTicketFile(id);
     if (found == null) throw ArgumentError('Ticket $id not found.');
-    final ticket = Ticket.fromFileContent(id, await found.file.readAsString(), found.column);
+    final ticket = Ticket.fromFileContent(
+      id,
+      await found.file.readAsString(),
+      found.column,
+    );
     final updated = ticket.copyWith(
       title: title,
       type: type,
@@ -179,7 +203,9 @@ class TicketStore {
       await found.file.delete();
       final newColDir = fs.directory(p.join(kanbanDir, column));
       await newColDir.create(recursive: true);
-      await fs.file(p.join(newColDir.path, '$id.md')).writeAsString(updated.toFileContent());
+      await fs
+          .file(p.join(newColDir.path, '$id.md'))
+          .writeAsString(updated.toFileContent());
     } else {
       await found.file.writeAsString(updated.toFileContent());
     }
@@ -192,7 +218,8 @@ class TicketStore {
     await found.file.delete();
     // Clean up per-ticket attachment directory if present.
     final attachmentsDir = fs.directory(p.join(kanbanDir, 'attachments', id));
-    if (await attachmentsDir.exists()) await attachmentsDir.delete(recursive: true);
+    if (await attachmentsDir.exists())
+      await attachmentsDir.delete(recursive: true);
   }
 
   /// Searches all column subdirectories (one level deep) for a ticket file.
@@ -204,7 +231,8 @@ class TicketStore {
       if (entity is! Directory) continue;
       if (p.basename(entity.path) == 'attachments') continue;
       final file = fs.file(p.join(entity.path, '$id.md'));
-      if (await file.exists()) return (file: file, column: p.basename(entity.path));
+      if (await file.exists())
+        return (file: file, column: p.basename(entity.path));
     }
     return null;
   }
@@ -215,7 +243,8 @@ class TicketStore {
     final pattern = RegExp(r'^' + RegExp.escape(prefix) + r'-(\d+)\.md$');
     var max = 0;
     await for (final entity in dir.list()) {
-      if (entity is! Directory || p.basename(entity.path) == 'attachments') continue;
+      if (entity is! Directory || p.basename(entity.path) == 'attachments')
+        continue;
       await for (final file in entity.list()) {
         final match = pattern.firstMatch(p.basename(file.path));
         if (match != null) {

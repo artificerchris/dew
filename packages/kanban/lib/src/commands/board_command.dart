@@ -47,7 +47,9 @@ class BoardCommand extends DewCommand with DewToolCommand {
       tickets = tickets.where((t) => t.labels.contains(labelFilter)).toList();
     }
     if (milestoneFilter != null) {
-      tickets = tickets.where((t) => t.milestones.contains(milestoneFilter)).toList();
+      tickets = tickets
+          .where((t) => t.milestones.contains(milestoneFilter))
+          .toList();
     }
 
     // Index by column, preserving config order.
@@ -80,8 +82,10 @@ class BoardCommand extends DewCommand with DewToolCommand {
       final col = entry.key;
       final header = '  $col (${entry.value.length})  ';
       final colLines = lines[col]!;
-      final contentWidth = [header.length, ...colLines.map((l) => l.length + 2)]
-          .reduce((a, b) => a > b ? a : b);
+      final contentWidth = [
+        header.length,
+        ...colLines.map((l) => l.length + 2),
+      ].reduce((a, b) => a > b ? a : b);
       final divider = '─' * contentWidth;
       buf.writeln('┌$divider┐');
       buf.writeln('│${header.padRight(contentWidth)}│');

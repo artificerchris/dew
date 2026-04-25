@@ -64,7 +64,8 @@ class InitCommand extends Command<void> {
   final List<DewInitHook> _hooks;
   final FileSystem _fs;
 
-  InitCommand(this._hooks, {FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  InitCommand(this._hooks, {FileSystem fs = const LocalFileSystem()})
+    : _fs = fs {
     argParser
       ..addOption(
         'path',

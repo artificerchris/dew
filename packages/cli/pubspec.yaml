@@ -1,8 +1,8 @@
 name: dew
 description: Command-line interface for the Dew project management tool.
-version: 0.0.1
-# repository: https://github.com/my_org/my_repo
-publish_to: none
+version: 1.0.0
+repository: https://github.com/artificery-dev/dew
+issue_tracker: https://github.com/artificery-dev/dew/issues
 resolution: workspace
 
 environment:
@@ -10,12 +10,9 @@ environment:
 
 dependencies:
   args: ^2.7.0
-  dew_core:
-    path: ../core
-  dew_kanban:
-    path: ../kanban
-  dew_mcp:
-    path: ../mcp
+  dew_core: ^1.0.0
+  dew_kanban: ^1.0.0
+  dew_mcp: ^1.0.0
 
 dev_dependencies:
   lints: ^6.0.0

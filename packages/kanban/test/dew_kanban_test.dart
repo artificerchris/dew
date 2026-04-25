@@ -39,8 +39,21 @@ void main() {
       expect(
         cmd.subcommands.keys,
         containsAll([
-          'create', 'list', 'board', 'get', 'update', 'delete', 'archive', 'unarchive',
-          'move', 'search', 'comment', 'config', 'stats', 'link', 'unlink',
+          'create',
+          'list',
+          'board',
+          'get',
+          'update',
+          'delete',
+          'archive',
+          'unarchive',
+          'move',
+          'search',
+          'comment',
+          'config',
+          'stats',
+          'link',
+          'unlink',
         ]),
       );
     });
@@ -82,15 +95,25 @@ void main() {
       final registry = CommandRegistry();
       registerCommands(registry);
       for (final tool in registry.mcpTools) {
-        expect(tool.description, isNotEmpty, reason: '${tool.name} description');
-        expect(tool.inputSchema['type'], 'object', reason: '${tool.name} schema type');
+        expect(
+          tool.description,
+          isNotEmpty,
+          reason: '${tool.name} description',
+        );
+        expect(
+          tool.inputSchema['type'],
+          'object',
+          reason: '${tool.name} schema type',
+        );
       }
     });
 
     test('schema derived from argParser — create tool has required fields', () {
       final registry = CommandRegistry();
       registerCommands(registry);
-      final create = registry.mcpTools.firstWhere((t) => t.name == 'kanban_create_ticket');
+      final create = registry.mcpTools.firstWhere(
+        (t) => t.name == 'kanban_create_ticket',
+      );
       final required = create.inputSchema['required'] as List;
       expect(required, containsAll(['title', 'type']));
     });
@@ -110,12 +133,19 @@ void main() {
       final listResult = await tools['kanban_list_tickets']!.handler({});
       expect(listResult, contains('T-0001'));
 
-      final searchResult = await tools['kanban_search_tickets']!.handler({'query': 'Hello'});
+      final searchResult = await tools['kanban_search_tickets']!.handler({
+        'query': 'Hello',
+      });
       expect(searchResult, contains('T-0001'));
 
-      await tools['kanban_add_comment']!.handler({'id': 'T-0001', 'comment': 'Nice ticket.'});
+      await tools['kanban_add_comment']!.handler({
+        'id': 'T-0001',
+        'comment': 'Nice ticket.',
+      });
 
-      final getResult = await tools['kanban_get_ticket']!.handler({'id': 'T-0001'});
+      final getResult = await tools['kanban_get_ticket']!.handler({
+        'id': 'T-0001',
+      });
       expect(getResult, contains('Nice ticket.'));
 
       final configResult = await tools['kanban_get_config']!.handler({});
@@ -170,22 +200,37 @@ dew:
 
       // Allowed: backlog → doing
       await expectLater(
-        tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'doing'}),
+        tools['kanban_move_ticket']!.handler({
+          'id': 'T-0001',
+          'column': 'doing',
+        }),
         completes,
       );
 
       // Reset to backlog first.
-      await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'backlog'});
+      await tools['kanban_move_ticket']!.handler({
+        'id': 'T-0001',
+        'column': 'backlog',
+      });
 
       // backlog → done should throw (not in allowed_transitions).
       await expectLater(
-        tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'done'}),
+        tools['kanban_move_ticket']!.handler({
+          'id': 'T-0001',
+          'column': 'done',
+        }),
         throwsA(isA<ArgumentError>()),
       );
 
       // Unconstrained column (done) — any target is valid.
-      await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'doing'});
-      await tools['kanban_move_ticket']!.handler({'id': 'T-0001', 'column': 'done'});
+      await tools['kanban_move_ticket']!.handler({
+        'id': 'T-0001',
+        'column': 'doing',
+      });
+      await tools['kanban_move_ticket']!.handler({
+        'id': 'T-0001',
+        'column': 'done',
+      });
       // done → backlog: done has no constraints, so it's allowed.
       final result = await tools['kanban_move_ticket']!.handler({
         'id': 'T-0001',
@@ -300,17 +345,22 @@ dew:
   });
 
   group('TicketStore', () {
-    TicketStore makeStore(MemoryFileSystem fs) => TicketStore(
-      kanbanDir: '/kanban',
-      prefix: 'TEST',
-      fs: fs,
-    );
+    TicketStore makeStore(MemoryFileSystem fs) =>
+        TicketStore(kanbanDir: '/kanban', prefix: 'TEST', fs: fs);
 
     test('create assigns incrementing IDs', () async {
       final fs = MemoryFileSystem();
       final store = makeStore(fs);
-      final t1 = await store.create(title: 'First', type: 'task', column: 'todo');
-      final t2 = await store.create(title: 'Second', type: 'bug', column: 'todo');
+      final t1 = await store.create(
+        title: 'First',
+        type: 'task',
+        column: 'todo',
+      );
+      final t2 = await store.create(
+        title: 'Second',
+        type: 'bug',
+        column: 'todo',
+      );
       expect(t1.id, 'TEST-0001');
       expect(t2.id, 'TEST-0002');
     });
@@ -407,35 +457,35 @@ dew:
     test('delete throws for missing ticket', () async {
       final fs = MemoryFileSystem();
       final store = makeStore(fs);
-      expect(
-        () => store.delete('TEST-0099'),
-        throwsA(isA<ArgumentError>()),
-      );
+      expect(() => store.delete('TEST-0099'), throwsA(isA<ArgumentError>()));
     });
 
-    test('linkTickets adds typed link bidirectionally and is idempotent', () async {
-      final fs = MemoryFileSystem();
-      final store = makeStore(fs);
-      await store.create(title: 'A', type: 'task', column: 'todo');
-      await store.create(title: 'B', type: 'task', column: 'todo');
-      await store.linkTickets('TEST-0001', 'TEST-0002', 'blocks');
+    test(
+      'linkTickets adds typed link bidirectionally and is idempotent',
+      () async {
+        final fs = MemoryFileSystem();
+        final store = makeStore(fs);
+        await store.create(title: 'A', type: 'task', column: 'todo');
+        await store.create(title: 'B', type: 'task', column: 'todo');
+        await store.linkTickets('TEST-0001', 'TEST-0002', 'blocks');
 
-      final a = await store.findById('TEST-0001');
-      expect(a!.links, hasLength(1));
-      expect(a.links.first.targetId, 'TEST-0002');
-      expect(a.links.first.type, 'blocks');
+        final a = await store.findById('TEST-0001');
+        expect(a!.links, hasLength(1));
+        expect(a.links.first.targetId, 'TEST-0002');
+        expect(a.links.first.type, 'blocks');
 
-      // Inverse written on target.
-      final b = await store.findById('TEST-0002');
-      expect(b!.links, hasLength(1));
-      expect(b.links.first.targetId, 'TEST-0001');
-      expect(b.links.first.type, 'is_blocked_by');
+        // Inverse written on target.
+        final b = await store.findById('TEST-0002');
+        expect(b!.links, hasLength(1));
+        expect(b.links.first.targetId, 'TEST-0001');
+        expect(b.links.first.type, 'is_blocked_by');
 
-      // Idempotent — calling again doesn't add duplicates.
-      await store.linkTickets('TEST-0001', 'TEST-0002', 'blocks');
-      final a2 = await store.findById('TEST-0001');
-      expect(a2!.links, hasLength(1));
-    });
+        // Idempotent — calling again doesn't add duplicates.
+        await store.linkTickets('TEST-0001', 'TEST-0002', 'blocks');
+        final a2 = await store.findById('TEST-0001');
+        expect(a2!.links, hasLength(1));
+      },
+    );
 
     test('linkTickets relates_to is symmetric', () async {
       final fs = MemoryFileSystem();
