@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io' as io;
 import 'dart:math';
 
 import 'package:dart_console/dart_console.dart';
@@ -10,6 +12,115 @@ import '../ticket.dart';
 import '../ticket_store.dart';
 
 enum _Mode { board, detail }
+
+// ── TUI event bus ────────────────────────────────────────────────────────────
+
+sealed class _TuiEvent {
+  const _TuiEvent();
+}
+
+final class _TuiKey extends _TuiEvent {
+  final Key key;
+  const _TuiKey(this.key);
+}
+
+final class _TuiRefresh extends _TuiEvent {
+  const _TuiRefresh();
+}
+
+/// Parses raw terminal bytes into [Key] values without blocking.
+///
+/// Mirrors [Console.readKey] but works on a pre-read byte batch so the event
+/// loop stays async-friendly. An escape byte followed by more bytes in the
+/// same batch is an escape sequence; a lone 0x1b is a plain Escape keypress.
+Iterable<Key> _parseKeys(List<int> bytes) sync* {
+  var i = 0;
+  while (i < bytes.length) {
+    final c = bytes[i++];
+
+    if (c >= 0x01 && c <= 0x1a) {
+      // Ctrl+A … Ctrl+Z map 1:1 to ControlCharacter enum indices
+      yield Key.control(ControlCharacter.values[c]);
+    } else if (c == 0x1b) {
+      if (i >= bytes.length) {
+        // Lone escape byte → plain Escape key
+        yield Key.control(ControlCharacter.escape);
+      } else if (bytes[i] == 0x7f) {
+        i++;
+        yield Key.control(ControlCharacter.wordBackspace);
+      } else if (bytes[i] == 0x5b) {
+        // ESC [ …
+        i++;
+        if (i >= bytes.length) {
+          yield Key.control(ControlCharacter.unknown);
+        } else {
+          final seq = String.fromCharCode(bytes[i++]);
+          switch (seq) {
+            case 'A':
+              yield Key.control(ControlCharacter.arrowUp);
+            case 'B':
+              yield Key.control(ControlCharacter.arrowDown);
+            case 'C':
+              yield Key.control(ControlCharacter.arrowRight);
+            case 'D':
+              yield Key.control(ControlCharacter.arrowLeft);
+            case 'H':
+              yield Key.control(ControlCharacter.home);
+            case 'F':
+              yield Key.control(ControlCharacter.end);
+            default:
+              final code = seq.codeUnitAt(0);
+              if (code > '0'.codeUnitAt(0) && code < '9'.codeUnitAt(0)) {
+                // ESC [ N ~ extended sequence
+                if (i < bytes.length && bytes[i] == 0x7e) i++;
+                yield Key.control(switch (seq) {
+                  '1' || '7' => ControlCharacter.home,
+                  '3' => ControlCharacter.delete,
+                  '4' || '8' => ControlCharacter.end,
+                  '5' => ControlCharacter.pageUp,
+                  '6' => ControlCharacter.pageDown,
+                  _ => ControlCharacter.unknown,
+                });
+              } else {
+                yield Key.control(ControlCharacter.unknown);
+              }
+          }
+        }
+      } else if (bytes[i] == 0x4f) {
+        // ESC O …
+        i++;
+        if (i >= bytes.length) {
+          yield Key.control(ControlCharacter.unknown);
+        } else {
+          final seq = String.fromCharCode(bytes[i++]);
+          yield Key.control(switch (seq) {
+            'H' => ControlCharacter.home,
+            'F' => ControlCharacter.end,
+            'P' => ControlCharacter.F1,
+            'Q' => ControlCharacter.F2,
+            'R' => ControlCharacter.F3,
+            'S' => ControlCharacter.F4,
+            _ => ControlCharacter.unknown,
+          });
+        }
+      } else if (bytes[i] == 0x62) {
+        i++;
+        yield Key.control(ControlCharacter.wordLeft);
+      } else if (bytes[i] == 0x66) {
+        i++;
+        yield Key.control(ControlCharacter.wordRight);
+      } else {
+        yield Key.control(ControlCharacter.unknown);
+      }
+    } else if (c == 0x7f) {
+      yield Key.control(ControlCharacter.backspace);
+    } else if (c == 0x00 || (c >= 0x1c && c <= 0x1f)) {
+      yield Key.control(ControlCharacter.unknown);
+    } else {
+      yield Key.printable(String.fromCharCode(c));
+    }
+  }
+}
 
 /// A single rendered cell: text + optional styling.
 class _Cell {
@@ -49,6 +160,7 @@ class TuiCommand extends DewCommand {
       prefix: config.prefix,
       fs: context.fs,
     );
+    final kanbanDirPath = context.dirs.kanban;
 
     final console = Console();
     if (!console.hasTerminal) {
@@ -107,12 +219,47 @@ class TuiCommand extends DewCommand {
       }
     }
 
+    // ── Event bus ────────────────────────────────────────────────────────────
+    final events = StreamController<_TuiEvent>();
+    Timer? debounce;
+    StreamSubscription<dynamic>? watchSub;
+
+    // File-system watcher — auto-refresh on any change in the kanban folder.
+    try {
+      watchSub = io.Directory(kanbanDirPath).watch(recursive: true).listen(
+        (_) {
+          debounce?.cancel();
+          debounce = Timer(const Duration(milliseconds: 350), () {
+            if (!events.isClosed) events.add(const _TuiRefresh());
+          });
+        },
+        onError: (_) {}, // ignore watch errors (e.g. unsupported platform)
+      );
+    } catch (_) {
+      // watch() throws on some platforms / missing dirs — auto-refresh disabled
+    }
+
+    // Key stream — raw bytes converted to Key values without blocking.
+    final keySub = io.stdin.listen((bytes) {
+      for (final key in _parseKeys(bytes)) {
+        if (!events.isClosed) events.add(_TuiKey(key));
+      }
+    });
+
     try {
       redraw();
 
       loop:
-      while (true) {
-        final key = console.readKey();
+      await for (final event in events.stream) {
+        // ── File changed ──────────────────────────────────────────────────
+        if (event is _TuiRefresh) {
+          tickets = await store.list();
+          byColumn = _groupByColumn(tickets, config);
+          redraw();
+          continue;
+        }
+
+        final key = (event as _TuiKey).key;
 
         // ── Search mode ────────────────────────────────────────────────────
         if (searchMode) {
@@ -130,13 +277,13 @@ class TuiCommand extends DewCommand {
                   searchQuery = searchQuery.substring(0, searchQuery.length - 1);
                 }
               default:
-                {}
+                continue loop; // skip redraw
             }
           } else {
             searchQuery += key.char;
           }
           redraw();
-          continue;
+          continue loop;
         }
 
         // ── Board mode ─────────────────────────────────────────────────────
@@ -194,11 +341,7 @@ class TuiCommand extends DewCommand {
                     statusMsg = 'Error: ${e.message ?? e}';
                   }
                 }
-              case 'r':
-                tickets = await store.list();
-                byColumn = _groupByColumn(tickets, config);
-                statusMsg = 'Reloaded.';
-              case '/':
+              case '?':
                 searchMode = true;
                 searchQuery = '';
                 ticketIdx = 0;
@@ -207,6 +350,8 @@ class TuiCommand extends DewCommand {
             }
           } else {
             switch (key.controlChar) {
+              case ControlCharacter.ctrlC:
+                break loop;
               case ControlCharacter.arrowUp:
                 if (ticketIdx > 0) ticketIdx--;
               case ControlCharacter.arrowDown:
@@ -248,10 +393,12 @@ class TuiCommand extends DewCommand {
               case 'k':
                 if (detailScroll > 0) detailScroll--;
               default:
-                continue loop;
+                continue loop; // skip redraw
             }
           } else {
             switch (key.controlChar) {
+              case ControlCharacter.ctrlC:
+                break loop;
               case ControlCharacter.escape:
                 mode = _Mode.board;
                 detailScroll = 0;
@@ -260,7 +407,7 @@ class TuiCommand extends DewCommand {
               case ControlCharacter.arrowDown:
                 detailScroll++;
               default:
-                continue loop;
+                continue loop; // skip redraw
             }
           }
         }
@@ -268,6 +415,10 @@ class TuiCommand extends DewCommand {
         redraw();
       }
     } finally {
+      await keySub.cancel();
+      await watchSub?.cancel();
+      debounce?.cancel();
+      await events.close();
       console.rawMode = false;
       console.showCursor();
       console.clearScreen();
@@ -509,7 +660,7 @@ class TuiCommand extends DewCommand {
 
     final left = ' DEW Kanban  [${config.prefix}]';
     final right = searchMode
-        ? '  / ${searchQuery}_  '
+        ? '  ? ${searchQuery}_  '
         : (searchQuery.isNotEmpty ? '  filter: "$searchQuery"  ' : '');
     final line = '$left${right.padLeft(max(0, w - left.length))}';
     console.write(_trunc(line, w).padRight(w));
@@ -547,7 +698,7 @@ class TuiCommand extends DewCommand {
       // Column position indicator + help
       console.setForegroundColor(ConsoleColor.brightBlack);
       final pos = numCols > numVisible ? ' [${colIdx + 1}/$numCols cols]' : '';
-      const help = ' [j/k] nav  [h/l] col  [</>] move  [enter] detail  [/] filter  [r] reload  [q] quit';
+      const help = ' [j/k] nav  [h/l] col  [</>] move  [enter] detail  [?] filter  [q] quit';
       console.write(_trunc('$pos$help', w).padRight(w));
       console.resetColorAttributes();
     }
