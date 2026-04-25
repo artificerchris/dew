@@ -1186,7 +1186,7 @@ class TuiCommand extends DewCommand {
     final scrollInfo = lines.isNotEmpty
         ? ' [${s + 1}-${min(s + contentH, lines.length)}/${lines.length}]'
         : '';
-    console.write(' [j/k↑↓] scroll$scrollInfo  [b/Esc] back  [q] quit'.padRight(w));
+    console.write(' [j/k↑↓] scroll$scrollInfo  [e] edit  [b/Esc] back  [q] quit'.padRight(w));
     console.resetColorAttributes();
   }
 
@@ -1472,14 +1472,14 @@ class TuiCommand extends DewCommand {
           // Plain text field (title, body preview)
           console.setForegroundColor(focused ? accentColor : textColor);
           final disp = value.isNotEmpty ? value : '(empty)';
-          final maxLen = innerW - 15;
+          final hint = focused
+              ? (field == _EditorField.body ? '  [Enter → \$EDITOR]' : '  [Enter to edit]')
+              : '';
+          final maxLen = innerW - 15 - hint.length;
           console.write(_trunc(disp, maxLen));
-          if (focused && field != _EditorField.body) {
+          if (hint.isNotEmpty) {
             console.setForegroundColor(ConsoleColor.white);
-            console.write('  [Enter to edit]');
-          } else if (focused && field == _EditorField.body) {
-            console.setForegroundColor(ConsoleColor.white);
-            console.write('  [Enter → \$EDITOR]');
+            console.write(hint);
           }
         }
         console.resetColorAttributes();
