@@ -170,7 +170,7 @@ class Ticket {
 
     List<String> parseStringList(String key) {
       final raw = fm[key] as YamlList?;
-      return raw?.map((e) => e as String).toList() ?? const [];
+      return raw?.map((e) => '$e').toList() ?? const [];
     }
 
     return Ticket(
