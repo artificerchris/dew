@@ -372,8 +372,12 @@ class TuiCommand extends DewCommand {
                   detailScroll = 0;
                 }
               case ControlCharacter.escape:
-                searchQuery = '';
-                statusMsg = '';
+                if (searchQuery.isNotEmpty || statusMsg.isNotEmpty) {
+                  searchQuery = '';
+                  statusMsg = '';
+                } else {
+                  break loop;
+                }
               default:
                 continue loop; // skip redraw
             }
@@ -562,7 +566,7 @@ class TuiCommand extends DewCommand {
       final msg = _trunc('  ↑ $scroll above', innerW);
       cells.add(_Cell('│${msg.padRight(innerW)}│', fg: ConsoleColor.brightYellow));
     } else {
-      cells.add(_Cell('│${' ' * innerW}│', fg: ConsoleColor.brightBlack));
+      cells.add(_Cell('│${' ' * innerW}│', fg: isSelected ? color : ConsoleColor.brightBlack));
     }
 
     // Visible tickets
@@ -573,9 +577,15 @@ class TuiCommand extends DewCommand {
 
     // Empty state
     if (tickets.isEmpty) {
-      cells.add(_Cell('│${'·' * (innerW ~/ 2)}${' ' * (innerW - innerW ~/ 2)}│', fg: ConsoleColor.brightBlack));
-      cells.add(_Cell('│  (empty)${' ' * (innerW - 9)}│', fg: ConsoleColor.brightBlack));
-      cells.add(_Cell('│${'·' * (innerW ~/ 2)}${' ' * (innerW - innerW ~/ 2)}│', fg: ConsoleColor.brightBlack));
+      final borderFg = isSelected ? color : ConsoleColor.brightBlack;
+      cells.add(_Cell('│${' ' * innerW}│', fg: borderFg));
+      final hint = _trunc('  ··· empty ···', innerW).padRight(innerW);
+      cells.add(_Cell(
+        '│$hint│',
+        fg: isSelected ? color : ConsoleColor.white,
+        bold: isSelected,
+      ));
+      cells.add(_Cell('│${' ' * innerW}│', fg: borderFg));
     }
 
     // "More below" indicator
@@ -584,12 +594,12 @@ class TuiCommand extends DewCommand {
       final msg = _trunc('  ↓ $remaining below', innerW);
       cells.add(_Cell('│${msg.padRight(innerW)}│', fg: ConsoleColor.brightYellow));
     } else {
-      cells.add(_Cell('│${' ' * innerW}│', fg: ConsoleColor.brightBlack));
+      cells.add(_Cell('│${' ' * innerW}│', fg: isSelected ? color : ConsoleColor.brightBlack));
     }
 
     // Fill remaining space before bottom border
     while (cells.length < areaH - 1) {
-      cells.add(_Cell('│${' ' * innerW}│', fg: ConsoleColor.brightBlack));
+      cells.add(_Cell('│${' ' * innerW}│', fg: isSelected ? color : ConsoleColor.brightBlack));
     }
 
     // Bottom border (always at areaH - 1)
