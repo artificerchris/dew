@@ -302,9 +302,7 @@ class TuiCommand extends DewCommand {
     }
 
     // Key stream — raw bytes converted to Key values without blocking.
-    // Declared as var so it can be cancelled and re-created around external editor.
-    StreamSubscription<List<int>> keySub;
-    keySub = io.stdin.listen((bytes) {
+    final keySub = io.stdin.listen((bytes) {
       for (final key in _parseKeys(bytes)) {
         if (!events.isClosed) events.add(_TuiKey(key));
       }
@@ -649,7 +647,7 @@ class TuiCommand extends DewCommand {
                       '${io.Directory.systemTemp.path}/dew_edit_${es.ticket.id}.md',
                     );
                     await tmpFile.writeAsString(es.body);
-                    await keySub.cancel();
+                    keySub.pause();
                     console.rawMode = false;
                     console.showCursor();
                     console.clearScreen();
@@ -661,13 +659,9 @@ class TuiCommand extends DewCommand {
                     await proc.exitCode;
                     es.body = await tmpFile.readAsString();
                     await tmpFile.delete();
-                    keySub = io.stdin.listen((bytes) {
-                      for (final key in _parseKeys(bytes)) {
-                        if (!events.isClosed) events.add(_TuiKey(key));
-                      }
-                    });
                     console.rawMode = true;
                     console.hideCursor();
+                    keySub.resume();
                   default:
                     break;
                 }
