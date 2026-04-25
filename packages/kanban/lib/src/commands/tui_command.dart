@@ -649,7 +649,7 @@ class TuiCommand extends DewCommand {
         : '  ${col.name} ($count) ';
     cells.add(_Cell(
       _trunc(nameRaw, colW).padRight(colW),
-      fg: isSelected ? color : ConsoleColor.brightBlack,
+      fg: isSelected ? color : ConsoleColor.white,
       bold: isSelected,
     ));
 
