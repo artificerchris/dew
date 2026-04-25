@@ -1402,11 +1402,11 @@ class TuiCommand extends DewCommand {
 
     // Header bar
     final headerText = ' ✏  Edit ${es.ticket.id} ';
-    final paddedHeader = headerText.padRight(innerW);
     at(modalTop + 1, modalLeft + 1, () {
       console.setForegroundColor(ConsoleColor.black);
       console.setBackgroundColor(accentColor);
-      console.writeLine(paddedHeader.substring(0, min(paddedHeader.length, innerW)));
+      final hText = headerText.padRight(innerW).substring(0, innerW);
+      console.write(hText);
       console.resetColorAttributes();
     });
 
