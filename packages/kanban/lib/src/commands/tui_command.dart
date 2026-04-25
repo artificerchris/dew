@@ -917,7 +917,7 @@ class TuiCommand extends DewCommand {
     // Top border of the ticket box — proper corners so the box closes cleanly
     cells.add(_Cell(
       '┌${'─' * innerW}┐',
-      fg: isSelected ? color : ConsoleColor.brightBlack,
+      fg: isSelected ? color : ConsoleColor.white,
     ));
 
     // ── Ticket area ────────────────────────────────────────────────────────
@@ -940,7 +940,7 @@ class TuiCommand extends DewCommand {
       final msg = _trunc('  ↑ $scroll above', innerW);
       cells.add(_Cell('│${msg.padRight(innerW)}│', fg: ConsoleColor.brightYellow));
     } else {
-      cells.add(_Cell('│${' ' * innerW}│', fg: isSelected ? color : ConsoleColor.brightBlack));
+      cells.add(_Cell('│${' ' * innerW}│', fg: isSelected ? color : ConsoleColor.white));
     }
 
     // Visible tickets
@@ -951,7 +951,7 @@ class TuiCommand extends DewCommand {
 
     // Empty state
     if (tickets.isEmpty) {
-      final borderFg = isSelected ? color : ConsoleColor.brightBlack;
+      final borderFg = isSelected ? color : ConsoleColor.white;
       cells.add(_Cell('│${' ' * innerW}│', fg: borderFg));
       final hint = _trunc('  ··· empty ···', innerW).padRight(innerW);
       cells.add(_Cell(
@@ -968,19 +968,19 @@ class TuiCommand extends DewCommand {
       final msg = _trunc('  ↓ $remaining below', innerW);
       cells.add(_Cell('│${msg.padRight(innerW)}│', fg: ConsoleColor.brightYellow));
     } else {
-      cells.add(_Cell('│${' ' * innerW}│', fg: isSelected ? color : ConsoleColor.brightBlack));
+      cells.add(_Cell('│${' ' * innerW}│', fg: isSelected ? color : ConsoleColor.white));
     }
 
     // Fill remaining space before bottom border
     while (cells.length < areaH - 1) {
-      cells.add(_Cell('│${' ' * innerW}│', fg: isSelected ? color : ConsoleColor.brightBlack));
+      cells.add(_Cell('│${' ' * innerW}│', fg: isSelected ? color : ConsoleColor.white));
     }
 
     // Bottom border (always at areaH - 1)
     if (cells.length > areaH - 1) cells.length = areaH - 1;
     cells.add(_Cell(
       isSelected ? '╘${'═' * innerW}╛' : '└${'─' * innerW}┘',
-      fg: isSelected ? color : ConsoleColor.brightBlack,
+      fg: isSelected ? color : ConsoleColor.white,
     ));
 
     // Pad to exact height
@@ -1026,7 +1026,7 @@ class TuiCommand extends DewCommand {
     }
     cells.add(_Cell(
       '│${_trunc(tagLine, innerW).padRight(innerW)}│',
-      fg: isSel ? ConsoleColor.brightCyan : ConsoleColor.brightBlack,
+      fg: isSel ? ConsoleColor.brightCyan : ConsoleColor.white,
       bg: bg,
     ));
   }
@@ -1066,7 +1066,7 @@ class TuiCommand extends DewCommand {
     console.writeLine();
 
     // Separator
-    console.setForegroundColor(ConsoleColor.brightBlack);
+    console.setForegroundColor(ConsoleColor.white);
     console.write('─' * w);
     console.resetColorAttributes();
     console.writeLine();
@@ -1091,7 +1091,7 @@ class TuiCommand extends DewCommand {
       console.resetColorAttributes();
     } else {
       // Column position indicator + help
-      console.setForegroundColor(ConsoleColor.brightBlack);
+      console.setForegroundColor(ConsoleColor.white);
       final pos = numCols > numVisible ? ' [${colIdx + 1}/$numCols cols]' : '';
       const help = ' [j/k] nav  [h/l] col  [</>] move  [↵] detail  [n] new  [e] edit  [a] archive  [c] comment  [?] filter  [q] quit';
       console.write(_trunc('$pos$help', w).padRight(w));
@@ -1141,11 +1141,11 @@ class TuiCommand extends DewCommand {
     }
 
     // Footer
-    console.setForegroundColor(ConsoleColor.brightBlack);
+    console.setForegroundColor(ConsoleColor.white);
     console.write('─' * w);
     console.resetColorAttributes();
     console.writeLine();
-    console.setForegroundColor(ConsoleColor.brightBlack);
+    console.setForegroundColor(ConsoleColor.white);
     final scrollInfo = lines.isNotEmpty
         ? ' [${s + 1}-${min(s + contentH, lines.length)}/${lines.length}]'
         : '';
@@ -1162,7 +1162,7 @@ class TuiCommand extends DewCommand {
         final dashes = max(0, w - tag.length + 2);
         lines.add(_Cell('  ─$tag${'─' * dashes}', fg: ConsoleColor.brightBlue, bold: true));
       } else {
-        lines.add(_Cell('  ${'─' * w}', fg: ConsoleColor.brightBlack));
+        lines.add(_Cell('  ${'─' * w}', fg: ConsoleColor.white));
       }
     }
 
@@ -1317,7 +1317,7 @@ class TuiCommand extends DewCommand {
     // Background dim — draw dim overlay (spaces) first
     for (var row = 1; row <= h; row++) {
       console.cursorPosition = Coordinate(row, 1);
-      console.setForegroundColor(ConsoleColor.brightBlack);
+      console.setForegroundColor(ConsoleColor.white);
       console.write('░' * w);
     }
 
@@ -1381,7 +1381,7 @@ class TuiCommand extends DewCommand {
           console.setForegroundColor(accentColor);
           console.write('${label.padRight(12)} ');
         } else {
-          console.setForegroundColor(ConsoleColor.brightBlack);
+          console.setForegroundColor(ConsoleColor.white);
           console.write(prefix);
           console.setForegroundColor(ConsoleColor.white);
           console.write('${label.padRight(12)} ');
@@ -1406,7 +1406,7 @@ class TuiCommand extends DewCommand {
           console.write('$prev$value$next');
         } else if (isMulti) {
           if (items.isEmpty) {
-            console.setForegroundColor(ConsoleColor.brightBlack);
+            console.setForegroundColor(ConsoleColor.white);
             console.write('(none)  ');
             if (focused) {
               console.setForegroundColor(accentColor);
@@ -1421,13 +1421,13 @@ class TuiCommand extends DewCommand {
                 console.write(' ${items[i]} ');
                 console.resetColorAttributes();
               } else {
-                console.setForegroundColor(focused ? textColor : ConsoleColor.brightBlack);
+                console.setForegroundColor(focused ? textColor : ConsoleColor.white);
                 console.write('• ${items[i]}  ');
               }
             }
             if (focused) {
               console.resetColorAttributes();
-              console.setForegroundColor(ConsoleColor.brightBlack);
+              console.setForegroundColor(ConsoleColor.white);
               console.write('  [Enter +]  [d] del');
             }
           }
@@ -1438,10 +1438,10 @@ class TuiCommand extends DewCommand {
           final maxLen = innerW - 15;
           console.write(_trunc(disp, maxLen));
           if (focused && field != _EditorField.body) {
-            console.setForegroundColor(ConsoleColor.brightBlack);
+            console.setForegroundColor(ConsoleColor.white);
             console.write('  [Enter to edit]');
           } else if (focused && field == _EditorField.body) {
-            console.setForegroundColor(ConsoleColor.brightBlack);
+            console.setForegroundColor(ConsoleColor.white);
             console.write('  [Enter → \$EDITOR]');
           }
         }
@@ -1465,7 +1465,7 @@ class TuiCommand extends DewCommand {
     final dirtyMarker = es.isDirty ? ' ● unsaved' : '';
     final footerHints = '[j/k] field  [h/l] value  [Enter] edit  [d] del  [s] save  [Esc] discard$dirtyMarker';
     at(modalTop + modalH - 2, modalLeft + 1, () {
-      console.setForegroundColor(ConsoleColor.brightBlack);
+      console.setForegroundColor(ConsoleColor.white);
       console.write(_trunc(footerHints, innerW));
       console.resetColorAttributes();
     });
