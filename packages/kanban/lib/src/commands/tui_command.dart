@@ -11,7 +11,7 @@ import '../kanban_config.dart';
 import '../ticket.dart';
 import '../ticket_store.dart';
 
-enum _Mode { board, detail }
+enum _Mode { board, detail, editor }
 
 // ── TUI event bus ────────────────────────────────────────────────────────────
 
@@ -37,6 +37,49 @@ class _Prompt {
   final String? ticketId;
   String input;
   _Prompt(this.kind, {this.input = '', this.ticketId});
+}
+
+// ── Ticket editor ─────────────────────────────────────────────────────────────
+
+enum _EditorField { title, type, column, labels, milestones, body }
+
+class _EditorState {
+  final Ticket ticket;
+  String title;
+  String type;
+  String column;
+  List<String> labels;
+  List<String> milestones;
+  String body;
+  _EditorField focus;
+  int itemCursor; // index within the focused labels/milestones list
+  bool textEditing;
+  String textInput;
+
+  _EditorState.from(Ticket t)
+      : ticket = t,
+        title = t.title,
+        type = t.type,
+        column = t.column,
+        labels = [...t.labels],
+        milestones = [...t.milestones],
+        body = t.body,
+        focus = _EditorField.title,
+        itemCursor = 0,
+        textEditing = false,
+        textInput = '';
+
+  bool get isDirty =>
+      title != ticket.title ||
+      type != ticket.type ||
+      column != ticket.column ||
+      body != ticket.body ||
+      !_eq(labels, ticket.labels) ||
+      !_eq(milestones, ticket.milestones);
+
+  static bool _eq(List<String> a, List<String> b) =>
+      a.length == b.length &&
+      a.asMap().entries.every((e) => e.key < b.length && b[e.key] == e.value);
 }
 
 /// Parses raw terminal bytes into [Key] values without blocking.
@@ -190,6 +233,7 @@ class TuiCommand extends DewCommand {
     var searchQuery = '';
     var searchMode = false;
     _Prompt? prompt;
+    _EditorState? editorState;
 
     console.hideCursor();
     console.rawMode = true;
@@ -200,7 +244,9 @@ class TuiCommand extends DewCommand {
       console.clearScreen();
       console.resetCursorPosition();
 
-      if (mode == _Mode.board) {
+      if (mode == _Mode.editor && editorState != null) {
+        _renderEditor(console: console, config: config, es: editorState, w: w, h: h);
+      } else if (mode == _Mode.board) {
         _renderBoard(
           console: console,
           config: config,
@@ -253,7 +299,9 @@ class TuiCommand extends DewCommand {
     }
 
     // Key stream — raw bytes converted to Key values without blocking.
-    final keySub = io.stdin.listen((bytes) {
+    // Declared as var so it can be cancelled and re-created around external editor.
+    StreamSubscription<List<int>> keySub;
+    keySub = io.stdin.listen((bytes) {
       for (final key in _parseKeys(bytes)) {
         if (!events.isClosed) events.add(_TuiKey(key));
       }
@@ -384,6 +432,210 @@ class TuiCommand extends DewCommand {
           continue loop;
         }
 
+        // ── Editor mode ────────────────────────────────────────────────────
+        if (mode == _Mode.editor && editorState != null) {
+          final es = editorState;
+
+          // ── Text editing sub-mode ────────────────────────────────────────
+          if (es.textEditing) {
+            if (key.isControl) {
+              switch (key.controlChar) {
+                case ControlCharacter.enter:
+                  final v = es.textInput.trim();
+                  if (v.isNotEmpty) {
+                    switch (es.focus) {
+                      case _EditorField.title:
+                        es.title = v;
+                      case _EditorField.labels:
+                        if (!es.labels.contains(v)) es.labels.add(v);
+                        es.itemCursor = es.labels.length - 1;
+                      case _EditorField.milestones:
+                        if (!es.milestones.contains(v)) es.milestones.add(v);
+                        es.itemCursor = es.milestones.length - 1;
+                      default:
+                        break;
+                    }
+                  }
+                  es.textEditing = false;
+                  es.textInput = '';
+                case ControlCharacter.escape:
+                  es.textEditing = false;
+                  es.textInput = '';
+                case ControlCharacter.backspace:
+                  if (es.textInput.isNotEmpty) {
+                    es.textInput = es.textInput.substring(0, es.textInput.length - 1);
+                  }
+                default:
+                  continue loop;
+              }
+            } else {
+              es.textInput += key.char;
+            }
+            redraw();
+            continue loop;
+          }
+
+          // ── Normal editor navigation ─────────────────────────────────────
+          final allTypes = config.ticketTypes.map((t) => t.id).toList();
+          final allCols = config.columns.map((c) => c.id).toList();
+
+          if (!key.isControl) {
+            switch (key.char) {
+              case 'j':
+                es.focus = _EditorField.values[
+                  (es.focus.index + 1) % _EditorField.values.length
+                ];
+                es.itemCursor = 0;
+              case 'k':
+                es.focus = _EditorField.values[
+                  (es.focus.index - 1 + _EditorField.values.length) % _EditorField.values.length
+                ];
+                es.itemCursor = 0;
+              case 'h':
+                switch (es.focus) {
+                  case _EditorField.type:
+                    final i = allTypes.indexOf(es.type);
+                    if (i > 0) es.type = allTypes[i - 1];
+                  case _EditorField.column:
+                    final i = allCols.indexOf(es.column);
+                    if (i > 0) es.column = allCols[i - 1];
+                  case _EditorField.labels:
+                    if (es.labels.isNotEmpty && es.itemCursor > 0) es.itemCursor--;
+                  case _EditorField.milestones:
+                    if (es.milestones.isNotEmpty && es.itemCursor > 0) es.itemCursor--;
+                  default:
+                    break;
+                }
+              case 'l':
+                switch (es.focus) {
+                  case _EditorField.type:
+                    final i = allTypes.indexOf(es.type);
+                    if (i < allTypes.length - 1) es.type = allTypes[i + 1];
+                  case _EditorField.column:
+                    final i = allCols.indexOf(es.column);
+                    if (i < allCols.length - 1) es.column = allCols[i + 1];
+                  case _EditorField.labels:
+                    if (es.labels.isNotEmpty && es.itemCursor < es.labels.length - 1) {
+                      es.itemCursor++;
+                    }
+                  case _EditorField.milestones:
+                    if (es.milestones.isNotEmpty && es.itemCursor < es.milestones.length - 1) {
+                      es.itemCursor++;
+                    }
+                  default:
+                    break;
+                }
+              case 'd':
+                switch (es.focus) {
+                  case _EditorField.labels:
+                    if (es.labels.isNotEmpty) {
+                      es.labels.removeAt(es.itemCursor.clamp(0, es.labels.length - 1));
+                      es.itemCursor = es.itemCursor.clamp(0, max(0, es.labels.length - 1));
+                    }
+                  case _EditorField.milestones:
+                    if (es.milestones.isNotEmpty) {
+                      es.milestones.removeAt(es.itemCursor.clamp(0, es.milestones.length - 1));
+                      es.itemCursor = es.itemCursor.clamp(0, max(0, es.milestones.length - 1));
+                    }
+                  default:
+                    break;
+                }
+              case 's':
+                // Save
+                try {
+                  await store.update(
+                    es.ticket.id,
+                    title: es.title,
+                    type: es.type,
+                    column: es.column,
+                    body: es.body,
+                    labels: es.labels,
+                    milestones: es.milestones,
+                  );
+                  tickets = await store.list();
+                  byColumn = _groupByColumn(tickets, config);
+                  // Find the ticket's new column & position
+                  colIdx = config.columns.indexWhere((c) => c.id == es.column);
+                  if (colIdx < 0) colIdx = 0;
+                  final destTickets = byColumn[es.column] ?? [];
+                  ticketIdx = max(0, destTickets.indexWhere((x) => x.id == es.ticket.id));
+                  statusMsg = 'Ticket updated.';
+                } on ArgumentError catch (e) {
+                  statusMsg = 'Error: ${e.message ?? e}';
+                }
+                editorState = null;
+                mode = _Mode.board;
+              case 'q':
+                editorState = null;
+                mode = _Mode.board;
+              default:
+                continue loop;
+            }
+          } else {
+            switch (key.controlChar) {
+              case ControlCharacter.ctrlC:
+                break loop;
+              case ControlCharacter.escape:
+                editorState = null;
+                mode = _Mode.board;
+              case ControlCharacter.arrowUp || ControlCharacter.arrowLeft:
+                es.focus = _EditorField.values[
+                  (es.focus.index - 1 + _EditorField.values.length) % _EditorField.values.length
+                ];
+                es.itemCursor = 0;
+              case ControlCharacter.arrowDown || ControlCharacter.arrowRight:
+                es.focus = _EditorField.values[
+                  (es.focus.index + 1) % _EditorField.values.length
+                ];
+                es.itemCursor = 0;
+              case ControlCharacter.enter:
+                // Enter starts text editing (title, labels, milestones) or opens external editor (body)
+                switch (es.focus) {
+                  case _EditorField.title:
+                    es.textInput = es.title;
+                    es.textEditing = true;
+                  case _EditorField.labels || _EditorField.milestones:
+                    es.textInput = '';
+                    es.textEditing = true;
+                  case _EditorField.body:
+                    // Launch external editor
+                    final editor = io.Platform.environment['VISUAL'] ??
+                        io.Platform.environment['EDITOR'] ??
+                        'vi';
+                    final tmpFile = io.File(
+                      '${io.Directory.systemTemp.path}/dew_edit_${es.ticket.id}.md',
+                    );
+                    await tmpFile.writeAsString(es.body);
+                    await keySub.cancel();
+                    console.rawMode = false;
+                    console.showCursor();
+                    console.clearScreen();
+                    final proc = await io.Process.start(
+                      editor,
+                      [tmpFile.path],
+                      mode: io.ProcessStartMode.inheritStdio,
+                    );
+                    await proc.exitCode;
+                    es.body = await tmpFile.readAsString();
+                    await tmpFile.delete();
+                    keySub = io.stdin.listen((bytes) {
+                      for (final key in _parseKeys(bytes)) {
+                        if (!events.isClosed) events.add(_TuiKey(key));
+                      }
+                    });
+                    console.rawMode = true;
+                    console.hideCursor();
+                  default:
+                    break;
+                }
+              default:
+                continue loop;
+            }
+          }
+          redraw();
+          continue loop;
+        }
+
         // ── Board mode ─────────────────────────────────────────────────────
         if (mode == _Mode.board) {
           final col = config.columns[colIdx];
@@ -448,8 +700,8 @@ class TuiCommand extends DewCommand {
                 prompt = _Prompt(_PromptKind.newTitle);
               case 'e':
                 if (colTickets.isNotEmpty) {
-                  final t = colTickets[ticketIdx];
-                  prompt = _Prompt(_PromptKind.editTitle, input: t.title, ticketId: t.id);
+                  editorState = _EditorState.from(colTickets[ticketIdx]);
+                  mode = _Mode.editor;
                 }
               case 'c':
                 if (colTickets.isNotEmpty) {
@@ -508,6 +760,15 @@ class TuiCommand extends DewCommand {
               case 'b':
                 mode = _Mode.board;
                 detailScroll = 0;
+              case 'e':
+                final col = config.columns[colIdx];
+                final colTickets2 = _filtered(byColumn[col.id] ?? [], searchQuery);
+                if (colTickets2.isNotEmpty) {
+                  editorState = _EditorState.from(
+                    colTickets2[ticketIdx.clamp(0, colTickets2.length - 1)],
+                  );
+                  mode = _Mode.editor;
+                }
               case 'j':
                 detailScroll++;
               case 'k':
@@ -1032,8 +1293,187 @@ class TuiCommand extends DewCommand {
     return '${s.substring(0, maxLen - 1)}…';
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // Ticket editor modal
+  // ══════════════════════════════════════════════════════════════════════════
+
+  static void _renderEditor({
+    required Console console,
+    required KanbanConfig config,
+    required _EditorState es,
+    required int w,
+    required int h,
+  }) {
+    final modalW = min(w - 4, 76);
+    const headerH = 2; // title bar + blank
+    const footerH = 2; // blank + hint bar
+    const fieldsCount = 6; // title, type, column, labels, milestones, body
+    const extraRows = 2; // extra padding rows
+    final modalH = headerH + fieldsCount + extraRows + footerH;
+    final modalLeft = ((w - modalW) ~/ 2) + 1;
+    final modalTop = max(1, ((h - modalH) ~/ 2));
+    final innerW = modalW - 2;
+
+    // Background dim — draw dim overlay (spaces) first
+    for (var row = 1; row <= h; row++) {
+      console.cursorPosition = Coordinate(row, 1);
+      console.setForegroundColor(ConsoleColor.brightBlack);
+      console.write('░' * w);
+    }
+
+    final esColCfg = config.columns.firstWhere(
+      (c) => c.id == es.column,
+      orElse: () => config.columns.first,
+    );
+    final accentColor = _colColor(esColCfg.color);
+
+    void at(int row, int col, void Function() fn) {
+      console.cursorPosition = Coordinate(row, col);
+      fn();
+    }
+
+    void drawBorder() {
+      final topBar = '╔${'═' * innerW}╗';
+      final botBar = '╚${'═' * innerW}╝';
+      at(modalTop, modalLeft, () {
+        console.setForegroundColor(accentColor);
+        console.write(topBar);
+      });
+      for (var r = 1; r < modalH - 1; r++) {
+        at(modalTop + r, modalLeft, () {
+          console.setForegroundColor(accentColor);
+          console.write('║');
+          console.resetColorAttributes();
+          console.write(' ' * innerW);
+          console.setForegroundColor(accentColor);
+          console.write('║');
+        });
+      }
+      at(modalTop + modalH - 1, modalLeft, () {
+        console.setForegroundColor(accentColor);
+        console.write(botBar);
+      });
+    }
+
+    drawBorder();
+
+    // Header bar
+    final headerText = ' ✏  Edit ${es.ticket.id} ';
+    final paddedHeader = headerText.padRight(innerW);
+    at(modalTop + 1, modalLeft + 1, () {
+      console.setForegroundColor(ConsoleColor.black);
+      console.setBackgroundColor(accentColor);
+      console.writeLine(paddedHeader.substring(0, min(paddedHeader.length, innerW)));
+      console.resetColorAttributes();
+    });
+
+    final textColor = ConsoleColor.white;
+
+    void fieldRow(int relRow, _EditorField field, String label, String value,
+        {bool isSelector = false, bool isMulti = false, List<String> items = const [], int itemCursor = 0}) {
+      final focused = es.focus == field;
+      final prefix = focused ? '❯ ' : '  ';
+      at(modalTop + 3 + relRow, modalLeft + 1, () {
+        // Label
+        if (focused) {
+          console.setForegroundColor(accentColor);
+          console.write(prefix);
+          console.setForegroundColor(accentColor);
+          console.write('${label.padRight(12)} ');
+        } else {
+          console.setForegroundColor(ConsoleColor.brightBlack);
+          console.write(prefix);
+          console.setForegroundColor(ConsoleColor.white);
+          console.write('${label.padRight(12)} ');
+        }
+
+        // Value
+        if (es.textEditing && focused) {
+          // Editing inline — show input with cursor
+          console.setForegroundColor(ConsoleColor.black);
+          console.setBackgroundColor(ConsoleColor.white);
+          final inputDisplay = '${es.textInput}▌';
+          console.write(inputDisplay.padRight(min(innerW - 14, 40)));
+          console.resetColorAttributes();
+        } else if (isSelector) {
+          console.setForegroundColor(focused ? accentColor : textColor);
+          final allVals = field == _EditorField.type
+              ? config.ticketTypes.map((t) => t.id).toList()
+              : config.columns.map((c) => c.id).toList();
+          final idx = allVals.indexOf(value);
+          final prev = idx > 0 ? '◀ ' : '  ';
+          final next = idx < allVals.length - 1 ? ' ▶' : '  ';
+          console.write('$prev$value$next');
+        } else if (isMulti) {
+          if (items.isEmpty) {
+            console.setForegroundColor(ConsoleColor.brightBlack);
+            console.write('(none)  ');
+            if (focused) {
+              console.setForegroundColor(accentColor);
+              console.write(' [Enter to add]');
+            }
+          } else {
+            for (var i = 0; i < items.length; i++) {
+              final sel = focused && i == itemCursor;
+              if (sel) {
+                console.setForegroundColor(ConsoleColor.black);
+                console.setBackgroundColor(accentColor);
+                console.write(' ${items[i]} ');
+                console.resetColorAttributes();
+              } else {
+                console.setForegroundColor(focused ? textColor : ConsoleColor.brightBlack);
+                console.write('• ${items[i]}  ');
+              }
+            }
+            if (focused) {
+              console.resetColorAttributes();
+              console.setForegroundColor(ConsoleColor.brightBlack);
+              console.write('  [Enter +]  [d] del');
+            }
+          }
+        } else {
+          // Plain text field (title, body preview)
+          console.setForegroundColor(focused ? accentColor : textColor);
+          final disp = value.isNotEmpty ? value : '(empty)';
+          final maxLen = innerW - 15;
+          console.write(_trunc(disp, maxLen));
+          if (focused && field != _EditorField.body) {
+            console.setForegroundColor(ConsoleColor.brightBlack);
+            console.write('  [Enter to edit]');
+          } else if (focused && field == _EditorField.body) {
+            console.setForegroundColor(ConsoleColor.brightBlack);
+            console.write('  [Enter → \$EDITOR]');
+          }
+        }
+        console.resetColorAttributes();
+      });
+    }
+
+    fieldRow(0, _EditorField.title, 'Title', es.title);
+    fieldRow(1, _EditorField.type, 'Type', es.type, isSelector: true);
+    fieldRow(2, _EditorField.column, 'Column', es.column, isSelector: true);
+    fieldRow(3, _EditorField.labels, 'Labels', '', isMulti: true, items: es.labels, itemCursor: es.itemCursor);
+    fieldRow(4, _EditorField.milestones, 'Milestones', '', isMulti: true, items: es.milestones, itemCursor: es.itemCursor);
+
+    // Body row — show first line preview
+    final bodyPreview = es.body.isNotEmpty
+        ? es.body.split('\n').first
+        : '';
+    fieldRow(5, _EditorField.body, 'Body', bodyPreview);
+
+    // Footer hints
+    final dirtyMarker = es.isDirty ? ' ● unsaved' : '';
+    final footerHints = '[j/k] field  [h/l] value  [Enter] edit  [d] del  [s] save  [Esc] discard$dirtyMarker';
+    at(modalTop + modalH - 2, modalLeft + 1, () {
+      console.setForegroundColor(ConsoleColor.brightBlack);
+      console.write(_trunc(footerHints, innerW));
+      console.resetColorAttributes();
+    });
+  }
+
   static String _fmtDate(DateTime dt) =>
       '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+
 
   static List<String> _wordWrap(String text, int width) {
     if (text.isEmpty) return [''];
