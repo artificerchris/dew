@@ -14,6 +14,7 @@ import 'commands/list_command.dart';
 import 'commands/move_command.dart';
 import 'commands/search_command.dart';
 import 'commands/stats_command.dart';
+import 'commands/tui_command.dart';
 import 'commands/unarchive_command.dart';
 import 'commands/unlink_command.dart';
 import 'commands/update_command.dart';
@@ -34,6 +35,7 @@ class KanbanCommand extends DewCommand {
     addSubcommand(AddCommentCommand(fs: fs));
     addSubcommand(GetConfigCommand(fs: fs));
     addSubcommand(StatsCommand(fs: fs));
+    addSubcommand(TuiCommand(fs: fs));
     addSubcommand(LinkCommand(fs: fs));
     addSubcommand(UnlinkCommand(fs: fs));
   }
