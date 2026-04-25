@@ -92,7 +92,10 @@ Iterable<Key> _parseKeys(List<int> bytes) sync* {
   while (i < bytes.length) {
     final c = bytes[i++];
 
-    if (c >= 0x01 && c <= 0x1a) {
+    if (c == 0x0a || c == 0x0d) {
+      // Enter key — terminals send either LF (0x0a) or CR (0x0d)
+      yield Key.control(ControlCharacter.enter);
+    } else if (c >= 0x01 && c <= 0x1a) {
       // Ctrl+A … Ctrl+Z map 1:1 to ControlCharacter enum indices
       yield Key.control(ControlCharacter.values[c]);
     } else if (c == 0x1b) {
@@ -447,11 +450,21 @@ class TuiCommand extends DewCommand {
                       case _EditorField.title:
                         es.title = v;
                       case _EditorField.labels:
-                        if (!es.labels.contains(v)) es.labels.add(v);
-                        es.itemCursor = es.labels.length - 1;
+                        for (final part in v.split(',')) {
+                          final label = part.trim();
+                          if (label.isNotEmpty && !es.labels.contains(label)) {
+                            es.labels.add(label);
+                          }
+                        }
+                        es.itemCursor = max(0, es.labels.length - 1);
                       case _EditorField.milestones:
-                        if (!es.milestones.contains(v)) es.milestones.add(v);
-                        es.itemCursor = es.milestones.length - 1;
+                        for (final part in v.split(',')) {
+                          final ms = part.trim();
+                          if (ms.isNotEmpty && !es.milestones.contains(ms)) {
+                            es.milestones.add(ms);
+                          }
+                        }
+                        es.itemCursor = max(0, es.milestones.length - 1);
                       default:
                         break;
                     }
@@ -578,16 +591,46 @@ class TuiCommand extends DewCommand {
               case ControlCharacter.escape:
                 editorState = null;
                 mode = _Mode.board;
-              case ControlCharacter.arrowUp || ControlCharacter.arrowLeft:
+              case ControlCharacter.arrowUp:
                 es.focus = _EditorField.values[
                   (es.focus.index - 1 + _EditorField.values.length) % _EditorField.values.length
                 ];
                 es.itemCursor = 0;
-              case ControlCharacter.arrowDown || ControlCharacter.arrowRight:
+              case ControlCharacter.arrowDown:
                 es.focus = _EditorField.values[
                   (es.focus.index + 1) % _EditorField.values.length
                 ];
                 es.itemCursor = 0;
+              case ControlCharacter.arrowLeft:
+                switch (es.focus) {
+                  case _EditorField.type:
+                    final i = allTypes.indexOf(es.type);
+                    if (i > 0) es.type = allTypes[i - 1];
+                  case _EditorField.column:
+                    final i = allCols.indexOf(es.column);
+                    if (i > 0) es.column = allCols[i - 1];
+                  case _EditorField.labels:
+                    if (es.itemCursor > 0) es.itemCursor--;
+                  case _EditorField.milestones:
+                    if (es.itemCursor > 0) es.itemCursor--;
+                  default:
+                    break;
+                }
+              case ControlCharacter.arrowRight:
+                switch (es.focus) {
+                  case _EditorField.type:
+                    final i = allTypes.indexOf(es.type);
+                    if (i < allTypes.length - 1) es.type = allTypes[i + 1];
+                  case _EditorField.column:
+                    final i = allCols.indexOf(es.column);
+                    if (i < allCols.length - 1) es.column = allCols[i + 1];
+                  case _EditorField.labels:
+                    if (es.itemCursor < es.labels.length - 1) es.itemCursor++;
+                  case _EditorField.milestones:
+                    if (es.itemCursor < es.milestones.length - 1) es.itemCursor++;
+                  default:
+                    break;
+                }
               case ControlCharacter.enter:
                 // Enter starts text editing (title, labels, milestones) or opens external editor (body)
                 switch (es.focus) {
@@ -1463,7 +1506,7 @@ class TuiCommand extends DewCommand {
 
     // Footer hints
     final dirtyMarker = es.isDirty ? ' ● unsaved' : '';
-    final footerHints = '[j/k] field  [h/l] value  [Enter] edit  [d] del  [s] save  [Esc] discard$dirtyMarker';
+    final footerHints = '[j/k↑↓] field  [h/l←→] value  [Enter] edit  [d] del  [s] save  [Esc] discard$dirtyMarker';
     at(modalTop + modalH - 2, modalLeft + 1, () {
       console.setForegroundColor(ConsoleColor.white);
       console.write(_trunc(footerHints, innerW));
