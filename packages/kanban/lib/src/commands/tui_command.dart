@@ -28,6 +28,17 @@ final class _TuiRefresh extends _TuiEvent {
   const _TuiRefresh();
 }
 
+// ── Inline prompt ────────────────────────────────────────────────────────────
+
+enum _PromptKind { newTitle, editTitle, addComment, archiveConfirm }
+
+class _Prompt {
+  final _PromptKind kind;
+  final String? ticketId;
+  String input;
+  _Prompt(this.kind, {this.input = '', this.ticketId});
+}
+
 /// Parses raw terminal bytes into [Key] values without blocking.
 ///
 /// Mirrors [Console.readKey] but works on a pre-read byte batch so the event
@@ -147,7 +158,7 @@ class TuiCommand extends DewCommand {
   // Layout constants
   static const _colSep = 1; // gap between columns (chars)
   static const _minColW = 26; // minimum column width
-  static const _colHeaderH = 3; // rows used by column header box
+  static const _colHeaderH = 2; // rows used by column header (pill + underline)
   static const _ticketH = 3; // rows per ticket card
   static const _indicatorRows = 2; // rows reserved for scroll indicators
 
@@ -178,6 +189,7 @@ class TuiCommand extends DewCommand {
     var statusMsg = '';
     var searchQuery = '';
     var searchMode = false;
+    _Prompt? prompt;
 
     console.hideCursor();
     console.rawMode = true;
@@ -198,6 +210,7 @@ class TuiCommand extends DewCommand {
           statusMsg: statusMsg,
           searchQuery: searchQuery,
           searchMode: searchMode,
+          prompt: prompt,
           w: w,
           h: h,
         );
@@ -260,6 +273,91 @@ class TuiCommand extends DewCommand {
         }
 
         final key = (event as _TuiKey).key;
+
+        // ── Prompt mode (inline action input) ─────────────────────────────
+        if (prompt != null) {
+          final p = prompt;
+          if (p.kind == _PromptKind.archiveConfirm) {
+            if (!key.isControl) {
+              if (key.char == 'y' || key.char == 'Y') {
+                try {
+                  await store.update(p.ticketId!, column: 'archive');
+                  tickets = await store.list();
+                  byColumn = _groupByColumn(tickets, config);
+                  final col = config.columns[colIdx];
+                  final remaining = _filtered(byColumn[col.id] ?? [], searchQuery);
+                  ticketIdx = ticketIdx.clamp(0, max(0, remaining.length - 1));
+                  statusMsg = 'Archived ${p.ticketId}.';
+                } on ArgumentError catch (e) {
+                  statusMsg = 'Error: ${e.message ?? e}';
+                }
+                prompt = null;
+              } else {
+                prompt = null;
+                statusMsg = '';
+              }
+            } else if (key.controlChar == ControlCharacter.escape) {
+              prompt = null;
+              statusMsg = '';
+            } else {
+              continue loop;
+            }
+          } else {
+            if (key.isControl) {
+              switch (key.controlChar) {
+                case ControlCharacter.escape:
+                  prompt = null;
+                  statusMsg = '';
+                case ControlCharacter.backspace:
+                  if (p.input.isNotEmpty) {
+                    p.input = p.input.substring(0, p.input.length - 1);
+                  }
+                case ControlCharacter.enter:
+                  final trimmed = p.input.trim();
+                  if (trimmed.isEmpty) {
+                    prompt = null;
+                  } else {
+                    try {
+                      switch (p.kind) {
+                        case _PromptKind.newTitle:
+                          final col = config.columns[colIdx];
+                          final type = config.ticketTypes.isNotEmpty
+                              ? config.ticketTypes.first.id
+                              : 'task';
+                          await store.create(title: trimmed, type: type, column: col.id);
+                          tickets = await store.list();
+                          byColumn = _groupByColumn(tickets, config);
+                          final created = _filtered(byColumn[col.id] ?? [], searchQuery);
+                          ticketIdx = max(0, created.length - 1);
+                          statusMsg = 'Created in ${col.name}.';
+                        case _PromptKind.editTitle:
+                          await store.update(p.ticketId!, title: trimmed);
+                          tickets = await store.list();
+                          byColumn = _groupByColumn(tickets, config);
+                          statusMsg = 'Title updated.';
+                        case _PromptKind.addComment:
+                          await store.addComment(p.ticketId!, trimmed);
+                          tickets = await store.list();
+                          byColumn = _groupByColumn(tickets, config);
+                          statusMsg = 'Comment added.';
+                        case _PromptKind.archiveConfirm:
+                          break; // handled above
+                      }
+                    } on ArgumentError catch (e) {
+                      statusMsg = 'Error: ${e.message ?? e}';
+                    }
+                    prompt = null;
+                  }
+                default:
+                  continue loop;
+              }
+            } else {
+              p.input += key.char;
+            }
+          }
+          redraw();
+          continue loop;
+        }
 
         // ── Search mode ────────────────────────────────────────────────────
         if (searchMode) {
@@ -345,6 +443,24 @@ class TuiCommand extends DewCommand {
                 searchMode = true;
                 searchQuery = '';
                 ticketIdx = 0;
+              case 'n':
+                searchMode = false;
+                prompt = _Prompt(_PromptKind.newTitle);
+              case 'e':
+                if (colTickets.isNotEmpty) {
+                  final t = colTickets[ticketIdx];
+                  prompt = _Prompt(_PromptKind.editTitle, input: t.title, ticketId: t.id);
+                }
+              case 'c':
+                if (colTickets.isNotEmpty) {
+                  final t = colTickets[ticketIdx];
+                  prompt = _Prompt(_PromptKind.addComment, ticketId: t.id);
+                }
+              case 'a':
+                if (colTickets.isNotEmpty) {
+                  final t = colTickets[ticketIdx];
+                  prompt = _Prompt(_PromptKind.archiveConfirm, ticketId: t.id);
+                }
               default:
                 continue loop; // skip redraw
             }
@@ -443,6 +559,7 @@ class TuiCommand extends DewCommand {
     required String statusMsg,
     required String searchQuery,
     required bool searchMode,
+    required _Prompt? prompt,
     required int w,
     required int h,
   }) {
@@ -502,6 +619,7 @@ class TuiCommand extends DewCommand {
       statusMsg: statusMsg,
       searchMode: searchMode,
       searchQuery: searchQuery,
+      prompt: prompt,
       w: w,
       colIdx: colIdx,
       numCols: numCols,
@@ -522,27 +640,22 @@ class TuiCommand extends DewCommand {
     final color = _colColor(col.color);
     final innerW = colW - 2;
 
-    // ── Column header (3 rows) ─────────────────────────────────────────────
+    // ── Column header (2 rows: pill name + underline bar) ─────────────────
 
-    // Top border
-    cells.add(_Cell(
-      '┌${'─' * innerW}┐',
-      fg: isSelected ? color : ConsoleColor.brightBlack,
-    ));
-
-    // Name + count
+    // Name pill — full width, no side borders
     final count = tickets.length;
-    final label = _trunc(' ${col.name.toUpperCase()} ($count) ', innerW);
+    final nameRaw = isSelected
+        ? ' ▌ ${col.name.toUpperCase()} ($count) ▐'
+        : '  ${col.name} ($count) ';
     cells.add(_Cell(
-      '│${label.padRight(innerW)}│',
-      fg: isSelected ? ConsoleColor.black : color,
-      bg: isSelected ? color : null,
+      _trunc(nameRaw, colW).padRight(colW),
+      fg: isSelected ? color : ConsoleColor.brightBlack,
       bold: isSelected,
     ));
 
-    // Separator (double line for selected, single for others)
+    // Underline bar — ▔ (upper-eighth-block) for selected, thin ─ for inactive
     cells.add(_Cell(
-      isSelected ? '╞${'═' * innerW}╡' : '└${'─' * innerW}┘',
+      isSelected ? '▔' * colW : '─' * colW,
       fg: isSelected ? color : ConsoleColor.brightBlack,
     ));
 
@@ -682,6 +795,7 @@ class TuiCommand extends DewCommand {
     required String statusMsg,
     required bool searchMode,
     required String searchQuery,
+    required _Prompt? prompt,
     required int w,
     required int colIdx,
     required int numCols,
@@ -700,6 +814,16 @@ class TuiCommand extends DewCommand {
       console.setForegroundColor(ConsoleColor.brightYellow);
       console.write(' $statusMsg');
       console.resetColorAttributes();
+    } else if (prompt != null) {
+      console.setForegroundColor(ConsoleColor.brightCyan);
+      final line = switch (prompt.kind) {
+        _PromptKind.newTitle => ' New ticket title: ${prompt.input}▌',
+        _PromptKind.editTitle => ' Edit title: ${prompt.input}▌',
+        _PromptKind.addComment => ' Add comment: ${prompt.input}▌',
+        _PromptKind.archiveConfirm => ' Archive ${prompt.ticketId}? [y/N]',
+      };
+      console.write(_trunc(line, w).padRight(w));
+      console.resetColorAttributes();
     } else if (searchMode) {
       console.setForegroundColor(ConsoleColor.brightCyan);
       console.write(' Search: ${searchQuery}_  (Enter to apply, Esc to clear)');
@@ -708,7 +832,7 @@ class TuiCommand extends DewCommand {
       // Column position indicator + help
       console.setForegroundColor(ConsoleColor.brightBlack);
       final pos = numCols > numVisible ? ' [${colIdx + 1}/$numCols cols]' : '';
-      const help = ' [j/k] nav  [h/l] col  [</>] move  [enter] detail  [?] filter  [q] quit';
+      const help = ' [j/k] nav  [h/l] col  [</>] move  [↵] detail  [n] new  [e] edit  [a] archive  [c] comment  [?] filter  [q] quit';
       console.write(_trunc('$pos$help', w).padRight(w));
       console.resetColorAttributes();
     }
