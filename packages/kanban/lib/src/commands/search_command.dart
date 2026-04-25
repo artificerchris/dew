@@ -46,11 +46,13 @@ class SearchCommand extends DewCommand with DewToolCommand {
 
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {
-    final query = (args['query'] as String).toLowerCase();
-    final columnFilter = args['column'] as String?;
-    final typeFilter = args['type'] as String?;
-    final labelFilter = args['label'] as String?;
-    final milestoneFilter = args['milestone'] as String?;
+    final query = '${args['query']}'.toLowerCase();
+    final columnFilter = args['column'] != null ? '${args['column']}' : null;
+    final typeFilter = args['type'] != null ? '${args['type']}' : null;
+    final labelFilter = args['label'] != null ? '${args['label']}' : null;
+    final milestoneFilter = args['milestone'] != null
+        ? '${args['milestone']}'
+        : null;
     final includeArchived = args['include-archived'] as bool? ?? false;
 
     final context = await ProjectContext.find(fs: _fs);

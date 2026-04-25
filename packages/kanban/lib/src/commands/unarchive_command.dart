@@ -35,7 +35,7 @@ class UnarchiveCommand extends DewCommand with DewToolCommand {
 
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {
-    final id = (args['id'] as String).toUpperCase();
+    final id = '${args['id']}'.toUpperCase();
 
     final context = await ProjectContext.find(fs: _fs);
     final config = context.config.kanban;
@@ -50,7 +50,7 @@ class UnarchiveCommand extends DewCommand with DewToolCommand {
     if (ticket == null) throw ArgumentError('Ticket $id not found.');
     if (ticket.column != 'archive') return '$id is not archived.';
 
-    final columnArg = args['column'] as String?;
+    final columnArg = args['column'] != null ? '${args['column']}' : null;
     final targetColumn = columnArg ?? config.columns.first.id;
     if (!config.columns.any((c) => c.id == targetColumn)) {
       throw ArgumentError(

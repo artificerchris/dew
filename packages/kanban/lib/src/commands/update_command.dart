@@ -37,11 +37,11 @@ class UpdateCommand extends DewCommand with DewToolCommand {
 
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {
-    final id = (args['id'] as String).toUpperCase();
-    final title = args['title'] as String?;
-    final typeId = args['type'] as String?;
-    final column = args['column'] as String?;
-    final body = args['body'] as String?;
+    final id = '${args['id']}'.toUpperCase();
+    final title = args['title'] != null ? '${args['title']}' : null;
+    final typeId = args['type'] != null ? '${args['type']}' : null;
+    final column = args['column'] != null ? '${args['column']}' : null;
+    final body = args['body'] != null ? '${args['body']}' : null;
     final rawMilestones = args['milestone'] as List?;
     final milestones = rawMilestones != null && rawMilestones.isNotEmpty
         ? rawMilestones.cast<String>().where((s) => s.isNotEmpty).toList()

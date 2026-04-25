@@ -35,8 +35,8 @@ class AddCommentCommand extends DewCommand with DewToolCommand {
 
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {
-    final id = (args['id'] as String).toUpperCase();
-    final comment = args['comment'] as String;
+    final id = '${args['id']}'.toUpperCase();
+    final comment = '${args['comment']}';
 
     final context = await ProjectContext.find(fs: _fs);
     final store = TicketStore(

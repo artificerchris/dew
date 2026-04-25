@@ -31,8 +31,8 @@ class MoveCommand extends DewCommand with DewToolCommand {
 
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {
-    final id = (args['id'] as String).toUpperCase();
-    final column = args['column'] as String;
+    final id = '${args['id']}'.toUpperCase();
+    final column = '${args['column']}';
 
     final context = await ProjectContext.find(fs: _fs);
     final config = context.config.kanban;

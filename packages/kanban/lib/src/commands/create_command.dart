@@ -43,10 +43,10 @@ class CreateCommand extends DewCommand with DewToolCommand {
     final context = await ProjectContext.find(fs: _fs);
     final config = context.config.kanban;
 
-    final title = args['title'] as String;
-    final typeId = args['type'] as String;
-    final columnArg = args['column'] as String?;
-    final body = args['body'] as String? ?? '';
+    final title = '${args['title']}';
+    final typeId = '${args['type']}';
+    final columnArg = args['column'] != null ? '${args['column']}' : null;
+    final body = args['body'] != null ? '${args['body']}' : '';
     final milestones = _toStringList(args['milestone']);
     final labels = _toStringList(args['label']);
 

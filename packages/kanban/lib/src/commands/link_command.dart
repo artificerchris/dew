@@ -40,9 +40,9 @@ class LinkCommand extends DewCommand with DewToolCommand {
 
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {
-    final id = (args['id'] as String).toUpperCase();
-    final targetId = (args['target'] as String).toUpperCase();
-    final type = args['type'] as String;
+    final id = '${args['id']}'.toUpperCase();
+    final targetId = '${args['target']}'.toUpperCase();
+    final type = '${args['type']}';
 
     if (id == targetId)
       throw ArgumentError('A ticket cannot be linked to itself.');
