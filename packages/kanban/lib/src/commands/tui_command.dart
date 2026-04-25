@@ -1341,7 +1341,7 @@ class TuiCommand extends DewCommand {
     required int w,
     required int h,
   }) {
-    final modalW = min(w - 4, 76);
+    final modalW = min(w - 4, 100);
     const headerH = 2; // title bar + blank
     const footerH = 2; // blank + hint bar
     const fieldsCount = 6; // title, type, column, labels, milestones, body
