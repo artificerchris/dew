@@ -417,7 +417,7 @@ class TuiCommand extends DewCommand {
                     byColumn = _groupByColumn(tickets, config);
                     colIdx--;
                     final nt = _filtered(byColumn[newColId] ?? [], searchQuery);
-                    ticketIdx = max(0, nt.length - 1);
+                    ticketIdx = max(0, nt.indexWhere((x) => x.id == t.id));
                     statusMsg = 'Moved ${t.id} → ${config.columns[colIdx].name}';
                   } on ArgumentError catch (e) {
                     statusMsg = 'Error: ${e.message ?? e}';
@@ -433,7 +433,7 @@ class TuiCommand extends DewCommand {
                     byColumn = _groupByColumn(tickets, config);
                     colIdx++;
                     final nt = _filtered(byColumn[newColId] ?? [], searchQuery);
-                    ticketIdx = max(0, nt.length - 1);
+                    ticketIdx = max(0, nt.indexWhere((x) => x.id == t.id));
                     statusMsg = 'Moved ${t.id} → ${config.columns[colIdx].name}';
                   } on ArgumentError catch (e) {
                     statusMsg = 'Error: ${e.message ?? e}';
