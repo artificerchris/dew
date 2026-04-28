@@ -15,18 +15,18 @@ Welcome to the documentation for the Dew project management tool!
 
 Dew is structured as a Dart workspace with the following packages:
 
-| Package           | Description                                                                                     |
-| ----------------- | ----------------------------------------------------------------------------------------------- |
-| `packages/cli`    | The `dew` command-line tool. Wires all packages together at startup.                            |
-| `packages/core`   | Shared foundation: `DewCommand`, `DewToolCommand` mixin, `CommandRegistry`, and `DewConfig`.    |
-| `packages/kanban` | Kanban board logic. Each command automatically registers itself as an MCP tool.                 |
-| `packages/mcp`    | The MCP server. Collects tools from `CommandRegistry` and serves them over stdio.               |
+| Package           | Description                                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `packages/cli`    | The `dew` command-line tool. Wires all packages together at startup.                         |
+| `packages/core`   | Shared foundation: `DewCommand`, `DewToolCommand` mixin, `CommandRegistry`, and `DewConfig`. |
+| `packages/kanban` | Kanban board logic. Each command automatically registers itself as an MCP tool.              |
+| `packages/mcp`    | The MCP server. Collects tools from `CommandRegistry` and serves them over stdio.            |
 
 ### How commands become MCP tools
 
 Every CLI command that mixes in `DewToolCommand` is automatically registered as an MCP tool — no separate registration needed. The mixin derives the JSON Schema for the tool's input from the command's own `ArgParser`, so argument definitions are written exactly once.
 
-```
+```text
 ArgParser definition
       │
       ├─► dew kanban create   (human CLI)

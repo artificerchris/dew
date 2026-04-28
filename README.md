@@ -10,7 +10,7 @@
 
 16 subcommands cover the full lifecycle of a ticket:
 
-```
+```text
 create  list    get      update   delete  move
 search  comment archive  unarchive link   unlink
 stats   board   config   tui

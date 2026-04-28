@@ -276,9 +276,89 @@ dew:
       expect(parsed.comments, isEmpty);
     });
 
-    test('links roundtrip serialisation', () {
+    test('serializes markdown lists with surrounding blank lines', () {
       final t = Ticket(
         id: 'TEST-0003',
+        title: 'List spacing',
+        type: 'task',
+        column: 'todo',
+        created: DateTime.utc(2026, 1, 3),
+        body: '''
+Scope:
+- First item
+- Second item
+Outcome:
+1. Done
+2. Verified
+''',
+        comments: const [
+          '''
+Notes:
+- Comment item
+Next paragraph.
+''',
+        ],
+      );
+
+      final content = t.toFileContent();
+      expect(
+        content,
+        contains('Scope:\n\n- First item\n- Second item\n\nOutcome:'),
+      );
+      expect(content, contains('Outcome:\n\n1. Done\n2. Verified'));
+      expect(content, contains('Notes:\n\n- Comment item\n\nNext paragraph.'));
+    });
+
+    test('does not alter list-like lines inside fenced code blocks', () {
+      final t = Ticket(
+        id: 'TEST-0004',
+        title: 'Fence spacing',
+        type: 'task',
+        column: 'todo',
+        created: DateTime.utc(2026, 1, 4),
+        body: '''
+Example:
+```text
+- keep this adjacent
+next line
+```
+Then:
+- Real item
+''',
+        comments: const [],
+      );
+
+      final content = t.toFileContent();
+      expect(content, contains('Example:\n\n```text'));
+      expect(
+        content,
+        contains('```text\n- keep this adjacent\nnext line\n```\n\nThen:'),
+      );
+      expect(content, contains('Then:\n\n- Real item'));
+    });
+
+    test('adds a default language to unlabeled fenced code blocks', () {
+      final t = Ticket(
+        id: 'TEST-0005',
+        title: 'Fence language',
+        type: 'task',
+        column: 'todo',
+        created: DateTime.utc(2026, 1, 5),
+        body: '''
+Example:
+```
+plain output
+```
+''',
+        comments: const [],
+      );
+
+      expect(t.toFileContent(), contains('Example:\n\n```text\nplain output'));
+    });
+
+    test('links roundtrip serialisation', () {
+      final t = Ticket(
+        id: 'TEST-0006',
         title: 'Linked',
         type: 'task',
         column: 'todo',
@@ -300,7 +380,7 @@ dew:
 
     test('no links field when links is empty', () {
       final t = Ticket(
-        id: 'TEST-0004',
+        id: 'TEST-0007',
         title: 'No links',
         type: 'task',
         column: 'todo',
@@ -313,7 +393,7 @@ dew:
 
     test('milestones and labels roundtrip serialisation', () {
       final t = Ticket(
-        id: 'TEST-0005',
+        id: 'TEST-0008',
         title: 'Tagged',
         type: 'task',
         column: 'todo',
@@ -330,7 +410,7 @@ dew:
 
     test('no milestones/labels fields when empty', () {
       final t = Ticket(
-        id: 'TEST-0006',
+        id: 'TEST-0009',
         title: 'Plain',
         type: 'task',
         column: 'todo',

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-04-25
+## [0.1.0] - 2026-04-25
 
 ### Added
 
@@ -20,24 +20,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Full set of kanban subcommands, each also registered as an MCP tool automatically:
 
-| Subcommand   | Description                                                              |
-| ------------ | ------------------------------------------------------------------------ |
-| `create`     | Create a new ticket with title, type, column, body, labels, and milestones |
-| `list`       | List tickets filtered by column, type, label, milestone, or archived state |
-| `get`        | Fetch a single ticket by ID                                              |
-| `update`     | Update any field on a ticket (title, type, column, body, labels, milestones) |
-| `delete`     | Permanently delete a ticket                                              |
-| `move`       | Move a ticket to a different column (validates column transition rules)  |
-| `search`     | Full-text search across ticket titles, bodies, and comments              |
-| `comment`    | Append a comment to a ticket                                             |
-| `archive`    | Soft-delete a ticket by moving it to the archive column                  |
-| `unarchive`  | Restore an archived ticket to a column                                   |
-| `link`       | Create a typed bidirectional link between two tickets                    |
-| `unlink`     | Remove a link between two tickets                                        |
-| `stats`      | Display ticket counts grouped by column and type                         |
-| `board`      | Print an ASCII representation of the board                               |
-| `config`     | Print the current kanban configuration                                   |
-| `tui`        | Launch the interactive terminal UI                                       |
+| Subcommand  | Description                                                                  |
+| ----------- | ---------------------------------------------------------------------------- |
+| `create`    | Create a new ticket with title, type, column, body, labels, and milestones   |
+| `list`      | List tickets filtered by column, type, label, milestone, or archived state   |
+| `get`       | Fetch a single ticket by ID                                                  |
+| `update`    | Update any field on a ticket (title, type, column, body, labels, milestones) |
+| `delete`    | Permanently delete a ticket                                                  |
+| `move`      | Move a ticket to a different column (validates column transition rules)      |
+| `search`    | Full-text search across ticket titles, bodies, and comments                  |
+| `comment`   | Append a comment to a ticket                                                 |
+| `archive`   | Soft-delete a ticket by moving it to the archive column                      |
+| `unarchive` | Restore an archived ticket to a column                                       |
+| `link`      | Create a typed bidirectional link between two tickets                        |
+| `unlink`    | Remove a link between two tickets                                            |
+| `stats`     | Display ticket counts grouped by column and type                             |
+| `board`     | Print an ASCII representation of the board                                   |
+| `config`    | Print the current kanban configuration                                       |
+| `tui`       | Launch the interactive terminal UI                                           |
 
 - File-based storage: each ticket is a Markdown file with YAML frontmatter for
   metadata and inline `---` separators for comments. Column is derived from the
@@ -86,5 +86,5 @@ Full set of kanban subcommands, each also registered as an MCP tool automaticall
 - `ProjectDirs` with injectable filesystem abstraction (`package:file`) for
   testable path resolution.
 
-[Unreleased]: https://github.com/artificery-dev/dew/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/artificery-dev/dew/releases/tag/v1.0.0
+[Unreleased]: https://github.com/artificerchris/dew/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/artificerchris/dew/releases/tag/v0.1.0

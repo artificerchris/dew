@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.0.0 — 2026-04-25
+## 0.1.0 — 2026-04-25
 
-Initial stable release.
+Initial release.
 
 - `DewCommand` base class with arg-parser-driven CLI and MCP tool dual-mode
 - `DewToolCommand` mixin for commands that expose an MCP tool

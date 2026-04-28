@@ -87,4 +87,3 @@ The following tools are registered by the `kanban` package:
 | `is_duplicated_by`| `duplicates`      | No         |
 | `parent_of`       | `child_of`        | No         |
 | `child_of`        | `parent_of`       | No         |
-

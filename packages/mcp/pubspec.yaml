@@ -1,8 +1,8 @@
 name: dew_mcp
 description: MCP server for the Dew project management tool. Collects and serves tools registered by feature packages via the McpToolProvider interface.
-version: 1.0.0
-repository: https://github.com/artificery-dev/dew
-issue_tracker: https://github.com/artificery-dev/dew/issues
+version: 0.1.0
+repository: https://github.com/artificerchris/dew
+issue_tracker: https://github.com/artificerchris/dew/issues
 resolution: workspace
 
 environment:
@@ -10,11 +10,11 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  dew_core: ^1.0.0
+  dew_core: ^0.1.0
   dart_mcp: ^0.5.0
   yaml: ^3.1.0
 
 dev_dependencies:
   lints: ^6.0.0
   test: ^1.25.6
-  dew_kanban: ^1.0.0
+  dew_kanban: ^0.1.0

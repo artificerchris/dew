@@ -1,0 +1,12 @@
+{
+  "globs": [
+    "**/*.md"
+  ],
+  "gitignore": true,
+  "config": {
+    "MD013": false,
+    "MD060": {
+      "style": "aligned"
+    }
+  }
+}

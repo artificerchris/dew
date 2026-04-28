@@ -40,12 +40,12 @@ Fix any analysis warnings before opening a PR. The project uses the rules define
 
 ## Branch strategy
 
-| Branch    | Purpose                                                    |
-| --------- | ---------------------------------------------------------- |
-| `main`    | Stable, released code. Only merged into from `develop`.    |
-| `develop` | Integration branch. All PRs target this branch.           |
-| `feat/*`  | Feature branches cut from `develop`.                       |
-| `fix/*`   | Bug-fix branches cut from `develop`.                       |
+| Branch    | Purpose                                                 |
+| --------- | ------------------------------------------------------- |
+| `main`    | Stable, released code. Only merged into from `develop`. |
+| `develop` | Integration branch. All PRs target this branch.         |
+| `feat/*`  | Feature branches cut from `develop`.                    |
+| `fix/*`   | Bug-fix branches cut from `develop`.                    |
 
 **Workflow:**
 

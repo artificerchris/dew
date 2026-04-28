@@ -51,35 +51,35 @@ Second comment.
 
 All commands are available under `dew kanban <subcommand>`.
 
-| Subcommand    | Description                                                                    |
-| ------------- | ------------------------------------------------------------------------------ |
-| `create`      | Create a new ticket (`--title`, `--type`, `--column`, `--body`)                |
-| `list`        | List tickets (`--column`, `--type`, `--label`, `--milestone`, `--include-archived`) |
-| `get`         | Get a ticket by ID (`--id`)                                                    |
-| `update`      | Update fields on a ticket (`--id`, `--title`, `--type`, `--column`, `--body`) |
-| `delete`      | Delete a ticket permanently (`--id`)                                           |
-| `move`        | Move a ticket to a different column (`--id`, `--column`)                       |
-| `search`      | Full-text search across all ticket content (`--query`, `--include-archived`)   |
-| `comment`     | Append a comment to a ticket (`--id`, `--comment`)                             |
-| `archive`     | Soft-delete a ticket by moving it to the archive column (`--id`)               |
-| `unarchive`   | Restore an archived ticket to a column (`--id`, `--column`)                    |
-| `link`        | Link two tickets with a typed relationship (`--id`, `--target`, `--type`)      |
-| `unlink`      | Remove a link between two tickets (`--id`, `--target`)                         |
-| `stats`       | Show ticket counts by column and type                                          |
-| `board`       | Print an ASCII representation of the board                                     |
-| `config`      | Print the current kanban configuration                                         |
-| `tui`         | Launch the interactive terminal UI                                             |
+| Subcommand  | Description                                                                         |
+| ----------- | ----------------------------------------------------------------------------------- |
+| `create`    | Create a new ticket (`--title`, `--type`, `--column`, `--body`)                     |
+| `list`      | List tickets (`--column`, `--type`, `--label`, `--milestone`, `--include-archived`) |
+| `get`       | Get a ticket by ID (`--id`)                                                         |
+| `update`    | Update fields on a ticket (`--id`, `--title`, `--type`, `--column`, `--body`)       |
+| `delete`    | Delete a ticket permanently (`--id`)                                                |
+| `move`      | Move a ticket to a different column (`--id`, `--column`)                            |
+| `search`    | Full-text search across all ticket content (`--query`, `--include-archived`)        |
+| `comment`   | Append a comment to a ticket (`--id`, `--comment`)                                  |
+| `archive`   | Soft-delete a ticket by moving it to the archive column (`--id`)                    |
+| `unarchive` | Restore an archived ticket to a column (`--id`, `--column`)                         |
+| `link`      | Link two tickets with a typed relationship (`--id`, `--target`, `--type`)           |
+| `unlink`    | Remove a link between two tickets (`--id`, `--target`)                              |
+| `stats`     | Show ticket counts by column and type                                               |
+| `board`     | Print an ASCII representation of the board                                          |
+| `config`    | Print the current kanban configuration                                              |
+| `tui`       | Launch the interactive terminal UI                                                  |
 
 ## Ticket links
 
 Links are typed and bidirectional — writing one side automatically writes the inverse on the target.
 
-| Type              | Inverse            | Use case                          |
-| ----------------- | ------------------ | --------------------------------- |
-| `blocks`          | `is_blocked_by`    | Dependency between tickets        |
-| `relates_to`      | `relates_to`       | General relationship (symmetric)  |
-| `duplicates`      | `is_duplicated_by` | Duplicate ticket tracking         |
-| `parent_of`       | `child_of`         | Epic → story → task hierarchy     |
+| Type         | Inverse            | Use case                         |
+| ------------ | ------------------ | -------------------------------- |
+| `blocks`     | `is_blocked_by`    | Dependency between tickets       |
+| `relates_to` | `relates_to`       | General relationship (symmetric) |
+| `duplicates` | `is_duplicated_by` | Duplicate ticket tracking        |
+| `parent_of`  | `child_of`         | Epic → story → task hierarchy    |
 
 ## Configuration
 
@@ -120,41 +120,41 @@ The TUI has three modes. Press **F1** in any mode for a context-sensitive help o
 
 ### Modes
 
-| Mode       | How to enter                        | How to leave       |
-| ---------- | ----------------------------------- | ------------------ |
-| **Board**  | Default on launch                   | `q` to quit        |
-| **Detail** | Press `Enter` on a ticket in Board  | `b` or `Esc`       |
-| **Editor** | Press `e` in Board or Detail mode   | `s` save / `Esc` discard |
+| Mode       | How to enter                       | How to leave             |
+| ---------- | ---------------------------------- | ------------------------ |
+| **Board**  | Default on launch                  | `q` to quit              |
+| **Detail** | Press `Enter` on a ticket in Board | `b` or `Esc`             |
+| **Editor** | Press `e` in Board or Detail mode  | `s` save / `Esc` discard |
 
 ### Keybinding reference
 
 #### Board mode
 
-| Key       | Action                                          |
-| --------- | ----------------------------------------------- |
-| `↑` / `↓` | Navigate tickets within the current column      |
-| `←` / `→` | Switch to the previous / next column            |
+| Key       | Action                                                 |
+| --------- | ------------------------------------------------------ |
+| `↑` / `↓` | Navigate tickets within the current column             |
+| `←` / `→` | Switch to the previous / next column                   |
 | `<` / `>` | Move the selected ticket to the previous / next column |
-| `Enter`   | Open Detail view for the selected ticket        |
-| `n`       | Create a new ticket (opens Editor)              |
-| `e`       | Edit the selected ticket (opens Editor)         |
-| `a`       | Archive the selected ticket                     |
-| `D`       | Delete the selected ticket (with confirmation)  |
-| `c`       | Append a comment to the selected ticket         |
-| `L`       | Link the selected ticket to another ticket      |
-| `?`       | Open the live filter / search overlay           |
-| `F1`      | Toggle the help overlay                         |
-| `q`       | Quit                                            |
+| `Enter`   | Open Detail view for the selected ticket               |
+| `n`       | Create a new ticket (opens Editor)                     |
+| `e`       | Edit the selected ticket (opens Editor)                |
+| `a`       | Archive the selected ticket                            |
+| `D`       | Delete the selected ticket (with confirmation)         |
+| `c`       | Append a comment to the selected ticket                |
+| `L`       | Link the selected ticket to another ticket             |
+| `?`       | Open the live filter / search overlay                  |
+| `F1`      | Toggle the help overlay                                |
+| `q`       | Quit                                                   |
 
 #### Detail mode
 
-| Key       | Action                        |
-| --------- | ----------------------------- |
-| `↑` / `↓` | Scroll the ticket content     |
-| `e`       | Edit the ticket (opens Editor) |
-| `b` / `Esc` | Return to Board mode        |
-| `F1`      | Toggle the help overlay       |
-| `q`       | Quit                          |
+| Key         | Action                         |
+| ----------- | ------------------------------ |
+| `↑` / `↓`   | Scroll the ticket content      |
+| `e`         | Edit the ticket (opens Editor) |
+| `b` / `Esc` | Return to Board mode           |
+| `F1`        | Toggle the help overlay        |
+| `q`         | Quit                           |
 
 #### Editor mode
 

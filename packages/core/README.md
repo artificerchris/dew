@@ -1,6 +1,6 @@
 # dew_core
 
-Core abstractions for the [Dew](https://github.com/artificery-dev/dew) project management tool.
+Core abstractions for the [Dew](https://github.com/artificerchris/dew) project management tool.
 
 Provides `DewCommand`, `DewToolCommand`, `CommandRegistry`, and `ProjectContext` — the building blocks used by every Dew feature package.
 

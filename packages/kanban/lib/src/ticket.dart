@@ -121,15 +121,17 @@ class Ticket {
       }
     }
     buf.writeln('---');
-    if (body.isNotEmpty) {
+    final normalizedBody = _normalizeMarkdownSection(body);
+    if (normalizedBody.isNotEmpty) {
       buf.writeln();
-      buf.writeln(body);
+      buf.writeln(normalizedBody);
     }
     for (final comment in comments) {
+      final normalizedComment = _normalizeMarkdownSection(comment);
       buf.writeln();
       buf.writeln('---');
       buf.writeln();
-      buf.writeln(comment);
+      buf.writeln(normalizedComment);
     }
     return buf.toString();
   }
@@ -199,5 +201,120 @@ class Ticket {
         value.endsWith(' ');
     if (!needsQuoting) return value;
     return '"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"';
+  }
+
+  static String _normalizeMarkdownSection(String value) {
+    final normalizedNewlines = value
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
+        .trimRight();
+    if (normalizedNewlines.isEmpty) return '';
+
+    final lines = normalizedNewlines.split('\n');
+    final out = <String>[];
+    var inFence = false;
+    var inListBlock = false;
+    var justClosedFence = false;
+
+    for (final line in lines) {
+      final wasInFence = inFence;
+      final isBlank = line.trim().isEmpty;
+      final isFenceBoundary = _isMarkdownFenceBoundary(line);
+      final isOpeningFence = isFenceBoundary && !wasInFence;
+      final isClosingFence = isFenceBoundary && wasInFence;
+      final isListItem = !wasInFence && _isMarkdownListItem(line);
+      final isListContinuation =
+          !wasInFence &&
+          inListBlock &&
+          !isBlank &&
+          _isMarkdownListContinuation(line);
+
+      if (isBlank && !wasInFence && out.isNotEmpty && out.last.trim().isEmpty) {
+        justClosedFence = false;
+        inListBlock = false;
+        continue;
+      }
+
+      if (justClosedFence && !isBlank && out.last.trim().isNotEmpty) {
+        out.add('');
+      }
+      justClosedFence = false;
+
+      if (isOpeningFence && out.isNotEmpty && out.last.trim().isNotEmpty) {
+        out.add('');
+      } else if (!isOpeningFence &&
+          isListItem &&
+          !inListBlock &&
+          out.isNotEmpty &&
+          out.last.trim().isNotEmpty) {
+        out.add('');
+      } else if (inListBlock &&
+          !isBlank &&
+          !isListItem &&
+          !isListContinuation &&
+          out.isNotEmpty &&
+          out.last.trim().isNotEmpty) {
+        out.add('');
+      }
+
+      out.add(isOpeningFence ? _fenceLineWithDefaultLanguage(line) : line);
+
+      if (isFenceBoundary) {
+        inFence = !inFence;
+      }
+
+      if (isClosingFence) {
+        inListBlock = false;
+        justClosedFence = true;
+        continue;
+      }
+
+      if (wasInFence || isOpeningFence) {
+        inListBlock = false;
+        continue;
+      }
+
+      if (isBlank) {
+        inListBlock = false;
+      } else if (isListItem || isListContinuation) {
+        inListBlock = true;
+      } else {
+        inListBlock = false;
+      }
+    }
+
+    return out.join('\n').trimRight();
+  }
+
+  static bool _isMarkdownListItem(String line) =>
+      RegExp(r'^( {0,3})(?:[-+*]|\d+[.)])\s+').hasMatch(line);
+
+  static bool _isMarkdownListContinuation(String line) =>
+      line.startsWith(' ') || line.startsWith('\t');
+
+  static String _fenceLineWithDefaultLanguage(String line) {
+    final marker = _markdownFenceMarker(line);
+    if (marker == null) return line;
+
+    final trimmed = line.trimLeft();
+    final info = trimmed.substring(marker.length).trim();
+    if (info.isNotEmpty) return line;
+
+    final indent = line.substring(0, line.length - trimmed.length);
+    return '$indent${marker}text';
+  }
+
+  static bool _isMarkdownFenceBoundary(String line) =>
+      _markdownFenceMarker(line) != null;
+
+  static String? _markdownFenceMarker(String line) {
+    final trimmed = line.trimLeft();
+    if (trimmed.startsWith('```')) {
+      return RegExp(r'^`{3,}').stringMatch(trimmed);
+    }
+    if (trimmed.startsWith('~~~')) {
+      return RegExp(r'^~{3,}').stringMatch(trimmed);
+    }
+    return null;
   }
 }
