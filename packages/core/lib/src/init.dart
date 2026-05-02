@@ -31,10 +31,6 @@ abstract interface class DewInitHook {
 
 const _defaultDewYaml = '''
 dew:
-  mcp:
-    host: "localhost"
-    port: 8080
-
   kanban:
     prefix: "PROJ"
     ticket_types:

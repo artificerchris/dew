@@ -14,10 +14,6 @@ your-project/
 
 ```yaml
 dew:
-  mcp:
-    host: "localhost"   # Hostname the MCP server binds to
-    port: 8080          # Port the MCP server listens on
-
   kanban:
     prefix: "PROJ"      # Short prefix used for ticket IDs (e.g. PROJ-42)
 
@@ -47,12 +43,8 @@ dew:
 
 ## Reference
 
-### `dew.mcp`
-
-| Field  | Type    | Default       | Description                       |
-| ------ | ------- | ------------- | --------------------------------- |
-| `host` | string  | `"localhost"` | Hostname the MCP server binds to. |
-| `port` | integer | `8080`        | Port the MCP server listens on.   |
+The MCP server currently has no project-level `dew.yaml` configuration. Configure
+your MCP client to run `dew mcp serve`; see the [MCP documentation](./features/mcp.md).
 
 ### `dew.kanban`
 

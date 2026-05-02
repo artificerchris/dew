@@ -15,16 +15,8 @@ The MCP feature is split across two packages to keep concerns separate:
 
 ## Configuration
 
-The MCP server is configured under the `mcp` key in `.project/dew.yaml`. By default it runs on `localhost` at port `8080`.
-
-```yaml
-dew:
-  mcp:
-    host: "localhost"
-    port: 8080
-```
-
-See the [Configuration documentation](../config.md) for full details.
+The MCP server currently has no `.project/dew.yaml` settings. Configure your MCP
+client to launch `dew mcp serve`; the server communicates over stdio.
 
 ## Running the server
 

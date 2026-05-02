@@ -55,7 +55,7 @@ dew kanban tui
 
 ## Configuration
 
-Dew reads `.project/dew.yaml` for board columns, ticket types, ID prefix, and MCP server settings. Running `dew init .` generates this file with defaults. See the [Configuration documentation](./docs/config.md) for the full schema reference.
+Dew reads `.project/dew.yaml` for board columns, ticket types, and ID prefix. Running `dew init .` generates this file with defaults. See the [Configuration documentation](./docs/config.md) for the full schema reference.
 
 ## Documentation
 

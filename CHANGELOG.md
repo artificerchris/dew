@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-02
+
+### Changed
+
+- Removed unsupported MCP `host` and `port` settings from generated `dew.yaml`.
+- Updated MCP configuration docs to reflect stdio-only client setup.
+- Added the `dew` executable mapping for pub activation.
+
 ## [0.1.0] - 2026-04-25
 
 ### Added
@@ -86,5 +94,6 @@ Full set of kanban subcommands, each also registered as an MCP tool automaticall
 - `ProjectDirs` with injectable filesystem abstraction (`package:file`) for
   testable path resolution.
 
-[Unreleased]: https://github.com/artificerchris/dew/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/artificerchris/dew/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/artificerchris/dew/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/artificerchris/dew/releases/tag/v0.1.0

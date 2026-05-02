@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0 — 2026-05-02
+
+- Removed stale MCP config references from core config documentation.
+- Updated `dew init` defaults to generate only supported project config.
+
 ## 0.1.0 — 2026-04-25
 
 Initial release.

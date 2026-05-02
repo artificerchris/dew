@@ -5,9 +5,6 @@ import 'package:test/test.dart';
 
 const _testConfig = '''
 dew:
-  mcp:
-    host: localhost
-    port: 9090
   kanban:
     prefix: T
     ticket_types:
@@ -165,9 +162,6 @@ void main() {
       fs.directory('/.project/kanban').createSync(recursive: true);
       fs.file('/.project/dew.yaml').writeAsStringSync('''
 dew:
-  mcp:
-    host: localhost
-    port: 9090
   kanban:
     prefix: T
     ticket_types:

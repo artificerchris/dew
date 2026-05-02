@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 — 2026-05-02
+
+- Updated tests and fixtures for the generated config without unsupported MCP
+  `host` and `port` fields.
+- Bumped the `dew_core` dependency constraint to `^0.2.0`.
+
 ## 0.1.0 — 2026-04-25
 
 Initial release.

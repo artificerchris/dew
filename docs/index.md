@@ -38,6 +38,6 @@ ArgParser definition
 `DewConfig` in `core` is a thin wrapper around the raw YAML map. Feature packages add typed accessors via Dart extensions:
 
 - `dew_kanban` defines `KanbanDewConfig` — exposes `context.config.kanban`
-- `dew_mcp` defines `McpDewConfig` — exposes `context.config.mcp`
+- `dew_mcp` currently has no project-level config values
 
-This keeps feature-specific config classes out of `core` while leaving all call sites unchanged.
+This keeps feature-specific config classes out of `core`.

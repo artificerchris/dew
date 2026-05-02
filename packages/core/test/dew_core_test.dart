@@ -1,3 +1,4 @@
+import 'package:args/command_runner.dart';
 import 'package:dew_core/dew_core.dart';
 import 'package:file/memory.dart';
 import 'package:test/test.dart';
@@ -37,9 +38,6 @@ void main() {
   group('ProjectContext', () {
     const configYaml = '''
 dew:
-  mcp:
-    host: localhost
-    port: 9090
   kanban:
     prefix: TEST
     ticket_types:
@@ -59,8 +57,7 @@ dew:
       final ctx = await ProjectContext.find(fs: fs);
       final dew = ctx.config.raw['dew'];
       expect(dew['kanban']['prefix'], 'TEST');
-      expect(dew['mcp']['host'], 'localhost');
-      expect(dew['mcp']['port'], 9090);
+      expect(dew.containsKey('mcp'), isFalse);
     });
 
     test('find() locates config from a subdirectory', () async {
@@ -71,6 +68,23 @@ dew:
 
       final ctx = await ProjectContext.find(fs: fs, from: fs.directory('/sub'));
       expect(ctx.root, '/');
+    });
+  });
+
+  group('InitCommand', () {
+    test('generates dew.yaml without MCP host or port config', () async {
+      final fs = MemoryFileSystem();
+      final runner = CommandRunner<void>('dew', 'test');
+      runner.addCommand(InitCommand(const [], fs: fs));
+
+      await runner.run(['init', '--path', '/project']);
+
+      final config = fs.file('/project/.project/dew.yaml').readAsStringSync();
+      expect(config, contains('dew:'));
+      expect(config, contains('kanban:'));
+      expect(config, isNot(contains('mcp:')));
+      expect(config, isNot(contains('host:')));
+      expect(config, isNot(contains('port:')));
     });
   });
 }

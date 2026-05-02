@@ -6,7 +6,7 @@ import 'package:yaml/yaml.dart';
 /// Thin wrapper around the raw project YAML.
 ///
 /// Feature packages extend this class via Dart extension methods to expose
-/// typed configuration (e.g. [KanbanDewConfig.kanban], [McpDewConfig.mcp]).
+/// typed configuration (e.g. [KanbanDewConfig.kanban]).
 /// This keeps feature-specific config classes out of core.
 class DewConfig {
   final YamlMap raw;
