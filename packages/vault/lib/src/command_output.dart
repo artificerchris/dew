@@ -42,6 +42,7 @@ Future<String?> readSecretInput(
   required FileSystem fs,
   bool required = true,
   bool allowStdin = true,
+  String? prompt,
   String? projectRoot,
 }) async {
   final envVar = args['env']?.toString();
@@ -67,9 +68,23 @@ Future<String?> readSecretInput(
     return value.trimRight();
   }
 
-  if (!allowStdin || stdin.hasTerminal) {
+  if (!allowStdin) {
     if (!required) return null;
     throw ArgumentError('Missing secret value. Use --env, --file, or pipe input.');
+  }
+
+  if (stdin.hasTerminal) {
+    if (prompt != null) {
+      stdout.write('$prompt: ');
+    }
+    final input = stdin.readLineSync();
+    if (input == null || input.trim().isEmpty) {
+      if (!required) return null;
+      throw ArgumentError(
+        'Missing secret value. Use --env, --file, or pipe input.',
+      );
+    }
+    return input.trimRight();
   }
 
   final input = (await stdin.transform(utf8.decoder).join()).trimRight();

@@ -61,7 +61,8 @@ class SetCommand extends DewCommand with DewToolCommand {
       fs: context.fs,
       projectRoot: context.root,
       required: true,
-      allowStdin: false,
+      allowStdin: true,
+      prompt: 'Enter value for secret "$secretName"',
     );
 
     await store.write(secretName, value!, metadata: metadata);

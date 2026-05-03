@@ -60,6 +60,12 @@ dew:
         color: "green"
 ''';
 
+const _projectGitignore = '''
+/secrets/
+/toolchain/
+/cache/
+''';
+
 class InitCommand extends Command<void> {
   final List<DewInitHook> _hooks;
   final FileSystem _fs;
@@ -97,6 +103,7 @@ class InitCommand extends Command<void> {
 
     final projectDir = _fs.directory(p.join(projectRoot, '.project'));
     final configFile = _fs.file(p.join(projectDir.path, 'dew.yaml'));
+    final gitignoreFile = _fs.file(p.join(projectDir.path, '.gitignore'));
 
     await projectDir.create(recursive: true);
 
@@ -105,6 +112,13 @@ class InitCommand extends Command<void> {
     } else {
       await configFile.writeAsString(_defaultDewYaml.trimLeft());
       print('  created .project/dew.yaml');
+    }
+
+    if (await gitignoreFile.exists()) {
+      print('  found   .project/.gitignore (already exists, skipping)');
+    } else {
+      await gitignoreFile.writeAsString(_projectGitignore);
+      print('  created .project/.gitignore');
     }
 
     final config = DewConfig.fromYaml(

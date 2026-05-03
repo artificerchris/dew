@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:args/command_runner.dart';
 import 'package:dew_core/dew_core.dart';
 import 'package:dew_kanban/dew_kanban.dart' as kanban;
@@ -18,5 +20,10 @@ Future<void> main(List<String> args) async {
     runner.addCommand(command);
   }
 
-  await runner.run(args);
+  try {
+    await runner.run(args);
+  } on UsageException catch (error) {
+    stderr.writeln(error);
+    exitCode = 64;
+  }
 }
