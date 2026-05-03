@@ -12,7 +12,7 @@ dependencies:
   args: ^2.7.0
   dew_core: ^0.1.0
   dew_kanban: ^0.1.0
-  dew_vault: ^0.1.0
+  dew_vault: ^0.3.0
   dew_mcp: ^0.1.0
 
 dev_dependencies:
