@@ -1,9 +1,15 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 
 import '../command_output.dart';
+import '../vault_config.dart';
+import '../vault_generators.dart';
 
 class GenerateCommand extends DewCommand with DewToolCommand {
-  GenerateCommand() {
+  final FileSystem _fs;
+
+  GenerateCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption(
         'generator',
@@ -36,14 +42,23 @@ class GenerateCommand extends DewCommand with DewToolCommand {
   Future<String> callAsTool(Map<String, dynamic> args) async {
     final format = formatFromArgs(args);
     final generator = requireStringArg(args, 'generator');
-    final overrides = args['arg'] as List<dynamic>?;
+    final rawOverrides = parseGeneratorOptionPairs(args['arg']);
+    final context = await ProjectContext.find(fs: _fs);
+    final configuredGenerators = context.config.vault.generators;
+
+    final value = VaultGenerators.generateByName(
+      nameOrType: generator,
+      generators: configuredGenerators,
+      options: rawOverrides,
+    );
+
     return renderVaultOutput(
       format: format,
-      message: 'Generate stub output.',
+      message: value,
       json: {
         'generator': generator,
-        'options': overrides == null ? const <String>[] : overrides,
-        'value': '<generated>',
+        'options': rawOverrides,
+        'value': value,
       },
     );
   }

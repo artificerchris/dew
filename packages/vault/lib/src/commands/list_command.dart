@@ -1,9 +1,15 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 
+import '../vault_config.dart';
+import '../vault_store.dart';
 import '../command_output.dart';
 
 class ListCommand extends DewCommand with DewToolCommand {
-  ListCommand() {
+  final FileSystem _fs;
+
+  ListCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser.addOption(
       'format',
       defaultsTo: 'default',
@@ -24,10 +30,30 @@ class ListCommand extends DewCommand with DewToolCommand {
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {
     final format = formatFromArgs(args);
+    final context = await ProjectContext.find(fs: _fs);
+    final config = context.config.vault;
+    final store = VaultStore(
+      storageDir: resolveProjectPath(context.root, config.storageDir),
+      passwordFilePath: resolveProjectPath(context.root, config.passwordFile),
+      fs: context.fs,
+    );
+    final names = await store.listSecretNames();
+    if (names.isEmpty) {
+      return renderVaultOutput(
+        format: format,
+        message: 'No secrets found.',
+        json: {'secrets': const <String>[], 'count': 0},
+      );
+    }
+
+    final output = names.join('\n');
     return renderVaultOutput(
       format: format,
-      message: 'No secrets found (stubbed vault).',
-      json: {'secrets': <String>[], 'count': 0},
+      message: output,
+      json: {
+        'secrets': names,
+        'count': names.length,
+      },
     );
   }
 

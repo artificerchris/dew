@@ -1,9 +1,15 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 
 import '../command_output.dart';
+import '../vault_config.dart';
+import '../vault_store.dart';
 
 class SetCommand extends DewCommand with DewToolCommand {
-  SetCommand() {
+  final FileSystem _fs;
+
+  SetCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption(
         'name',
@@ -36,17 +42,37 @@ class SetCommand extends DewCommand with DewToolCommand {
   Future<String> callAsTool(Map<String, dynamic> args) async {
     final format = formatFromArgs(args);
     final secretName = requireStringArg(args, 'name');
-    final source =
-        args['env'] ?? args['file'] ?? args['metadata'] ?? args['metadata-file'];
+
+    final context = await ProjectContext.find(fs: _fs);
+    final config = context.config.vault;
+    final store = VaultStore(
+      storageDir: resolveProjectPath(context.root, config.storageDir),
+      passwordFilePath: resolveProjectPath(context.root, config.passwordFile),
+      fs: context.fs,
+    );
+
+    final metadata = await parseMetadataFromArgs(
+      args: args,
+      fs: context.fs,
+      projectRoot: context.root,
+    );
+    final value = await readSecretInput(
+      args,
+      fs: context.fs,
+      projectRoot: context.root,
+      required: true,
+      allowStdin: false,
+    );
+
+    await store.write(secretName, value!, metadata: metadata);
+
     return renderVaultOutput(
       format: format,
-      message: 'Set stub executed.',
+      message: 'Stored secret.',
       json: {
-        'secret': secretName,
-        'source': source == null ? 'interactive' : source.toString(),
-        'status': 'set',
+        'name': secretName,
+        'metadata': metadata,
       },
     );
   }
-
 }

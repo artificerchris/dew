@@ -1,9 +1,14 @@
 import 'package:dew_core/dew_core.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 
+import '../vault_store.dart';
 import '../command_output.dart';
 
 class VaultInitCommand extends DewCommand with DewToolCommand {
-  VaultInitCommand() {
+  final FileSystem _fs;
+
+  VaultInitCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
     argParser
       ..addOption(
         'password-file',
@@ -36,14 +41,23 @@ class VaultInitCommand extends DewCommand with DewToolCommand {
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {
     final format = formatFromArgs(args);
-    final passwordFile = requireStringArg(args, 'password-file');
-    final storageDir = requireStringArg(args, 'storage-dir');
+    final passwordFile = args['password-file']?.toString() ?? '.project/secrets/dew.vault.password';
+    final storageDir = args['storage-dir']?.toString() ?? '.project/vault';
+
+    final context = await ProjectContext.find(fs: _fs);
+    final store = VaultStore(
+      storageDir: resolveProjectPath(context.root, storageDir),
+      passwordFilePath: resolveProjectPath(context.root, passwordFile),
+      fs: context.fs,
+    );
+    await store.initialize();
+
     return renderVaultOutput(
       format: format,
-      message: 'Vault init stub completed.',
+      message: 'Vault initialised.',
       json: {
-        'password_file': passwordFile,
-        'storage_dir': storageDir,
+        'password_file': store.passwordFilePath,
+        'storage_dir': store.storageDir,
         'initialized': true,
       },
     );
