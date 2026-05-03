@@ -6,12 +6,12 @@ publish_to: none
 
 environment:
   sdk: ^3.11.4
-
 workspace:
   - packages/cli
   - packages/core
   - packages/kanban
   - packages/mcp
+  - packages/vault
 
 dev_dependencies:
   file: ^7.0.1
