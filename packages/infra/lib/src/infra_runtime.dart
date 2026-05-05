@@ -214,9 +214,16 @@ class PodmanQuadletRuntime implements ContainerRuntime {
   Future<bool> isInstalled(
     InfraServiceManifest manifest,
     InfraScope scope,
-  ) async =>
-      await fs.link(_targetContainerPath(manifest, scope)).exists() ||
-      await fs.file(_targetContainerPath(manifest, scope)).exists();
+  ) async {
+    if (manifest.quadlets.isEmpty) return false;
+    for (final quadlet in manifest.quadlets) {
+      final target = _targetQuadletPath(quadlet, scope);
+      final exists =
+          await fs.link(target).exists() || await fs.file(target).exists();
+      if (!exists) return false;
+    }
+    return true;
+  }
 
   @override
   Future<InfraRuntimeResult> install(
@@ -226,32 +233,39 @@ class PodmanQuadletRuntime implements ContainerRuntime {
   }) async {
     final actions = <String>[];
     final targetDir = quadletSearchPath(scope, environment: environment);
-    final targetFile = _targetContainerPath(manifest, scope);
     await _action(
       actions,
       dryRun,
       'create $targetDir',
       () => fs.directory(targetDir).create(recursive: true),
     );
-    await _link(actions, dryRun, manifest.containerFilePath, targetFile);
 
-    final dropinsPath = manifest.dropinsDirPath;
-    if (dropinsPath != null && await fs.directory(dropinsPath).exists()) {
-      final targetDropins = p.join(targetDir, p.basename(dropinsPath));
-      await _action(
+    for (final quadlet in manifest.quadlets) {
+      await _link(
         actions,
         dryRun,
-        'create $targetDropins',
-        () => fs.directory(targetDropins).create(recursive: true),
+        quadlet.filePath,
+        _targetQuadletPath(quadlet, scope),
       );
-      await for (final entity in fs.directory(dropinsPath).list()) {
-        if (entity is! File || p.extension(entity.path) != '.conf') continue;
-        await _link(
+
+      final dropinsPath = quadlet.dropinsDirPath;
+      if (dropinsPath != null && await fs.directory(dropinsPath).exists()) {
+        final targetDropins = p.join(targetDir, p.basename(dropinsPath));
+        await _action(
           actions,
           dryRun,
-          entity.path,
-          p.join(targetDropins, p.basename(entity.path)),
+          'create $targetDropins',
+          () => fs.directory(targetDropins).create(recursive: true),
         );
+        await for (final entity in fs.directory(dropinsPath).list()) {
+          if (entity is! File || p.extension(entity.path) != '.conf') continue;
+          await _link(
+            actions,
+            dryRun,
+            entity.path,
+            p.join(targetDropins, p.basename(entity.path)),
+          );
+        }
       }
     }
 
@@ -265,17 +279,17 @@ class PodmanQuadletRuntime implements ContainerRuntime {
     required bool dryRun,
   }) async {
     final actions = <String>[];
-    await _deletePath(actions, dryRun, _targetContainerPath(manifest, scope));
-    final dropinsPath = manifest.dropinsDirPath;
-    if (dropinsPath != null) {
-      await _deletePath(
-        actions,
-        dryRun,
-        p.join(
-          quadletSearchPath(scope, environment: environment),
-          p.basename(dropinsPath),
-        ),
-      );
+    final targetDir = quadletSearchPath(scope, environment: environment);
+    for (final quadlet in manifest.quadlets) {
+      await _deletePath(actions, dryRun, _targetQuadletPath(quadlet, scope));
+      final dropinsPath = quadlet.dropinsDirPath;
+      if (dropinsPath != null) {
+        await _deletePath(
+          actions,
+          dryRun,
+          p.join(targetDir, p.basename(dropinsPath)),
+        );
+      }
     }
     return InfraRuntimeResult(actions: actions);
   }
@@ -285,28 +299,31 @@ class PodmanQuadletRuntime implements ContainerRuntime {
     InfraServiceManifest manifest, {
     required InfraScope scope,
     required bool dryRun,
-  }) async => _systemctl(scope, ['start', manifest.unit], dryRun: dryRun);
+  }) async => _systemctl(scope, ['start', ...manifest.units], dryRun: dryRun);
 
   @override
   Future<InfraRuntimeResult> stop(
     InfraServiceManifest manifest, {
     required InfraScope scope,
     required bool dryRun,
-  }) async => _systemctl(scope, ['stop', manifest.unit], dryRun: dryRun);
+  }) async => _systemctl(scope, ['stop', ...manifest.units], dryRun: dryRun);
 
   @override
   Future<InfraRuntimeResult> restart(
     InfraServiceManifest manifest, {
     required InfraScope scope,
     required bool dryRun,
-  }) async => _systemctl(scope, ['restart', manifest.unit], dryRun: dryRun);
+  }) async => _systemctl(scope, ['restart', ...manifest.units], dryRun: dryRun);
 
   @override
   Future<InfraRuntimeResult> status(
     InfraServiceManifest manifest, {
     required InfraScope scope,
-  }) async =>
-      _systemctl(scope, ['status', manifest.unit, '--no-pager'], dryRun: false);
+  }) async => _systemctl(scope, [
+    'status',
+    ...manifest.units,
+    '--no-pager',
+  ], dryRun: false);
 
   @override
   Future<InfraRuntimeResult> logs(
@@ -317,8 +334,7 @@ class PodmanQuadletRuntime implements ContainerRuntime {
   }) async {
     final args = [
       if (scope == InfraScope.user) '--user',
-      '-u',
-      manifest.unit,
+      for (final unit in manifest.units) ...['-u', unit],
       '-n',
       '$lines',
       if (follow) '-f',
@@ -347,14 +363,23 @@ class PodmanQuadletRuntime implements ContainerRuntime {
     var exitCode = 0;
 
     if (deleteContainer) {
-      final args = ['rm', '--ignore', '--force', manifest.containerName];
-      final action = 'podman ${args.join(' ')}';
-      actions.add(action);
-      if (!dryRun) {
-        final result = await processRunner.run('podman', args);
-        exitCode = result.exitCode;
-        if (result.stdout.trim().isNotEmpty) outputs.add(result.stdout.trim());
-        if (result.stderr.trim().isNotEmpty) errors.add(result.stderr.trim());
+      if (manifest.containerNames.isEmpty) {
+        actions.add('no container artifacts declared for ${manifest.id}');
+      }
+      for (final containerName in manifest.containerNames) {
+        final args = ['rm', '--ignore', '--force', containerName];
+        final action = 'podman ${args.join(' ')}';
+        actions.add(action);
+        if (!dryRun) {
+          final result = await processRunner.run('podman', args);
+          if (exitCode == 0) exitCode = result.exitCode;
+          if (result.stdout.trim().isNotEmpty) {
+            outputs.add(result.stdout.trim());
+          }
+          if (result.stderr.trim().isNotEmpty) {
+            errors.add(result.stderr.trim());
+          }
+        }
       }
     }
     if (deleteData) {
@@ -378,13 +403,11 @@ class PodmanQuadletRuntime implements ContainerRuntime {
     required bool dryRun,
   }) => _systemctl(scope, ['daemon-reload'], dryRun: dryRun);
 
-  String _targetContainerPath(
-    InfraServiceManifest manifest,
-    InfraScope scope,
-  ) => p.join(
-    quadletSearchPath(scope, environment: environment),
-    p.basename(manifest.containerFile),
-  );
+  String _targetQuadletPath(InfraQuadletManifest quadlet, InfraScope scope) =>
+      p.join(
+        quadletSearchPath(scope, environment: environment),
+        p.basename(quadlet.file),
+      );
 
   Future<void> _link(
     List<String> actions,

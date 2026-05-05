@@ -205,7 +205,7 @@ class InfraListCommand extends _InfraSubcommand {
       return;
     }
     for (final manifest in manifests) {
-      print('${manifest.id}\t${manifest.name}\t${manifest.unit}');
+      print('${manifest.id}\t${manifest.name}\t${manifest.units.join(',')}');
     }
   }
 }

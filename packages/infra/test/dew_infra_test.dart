@@ -46,7 +46,7 @@ void main() {
   group('InfraRepository', () {
     test('discovers service manifests', () async {
       final fs = MemoryFileSystem.test();
-      _writeService(fs);
+      _writeService(fs, includeNetwork: true);
 
       final repository = InfraRepository(
         infraDir: '/project/.project/infrastructure',
@@ -57,9 +57,16 @@ void main() {
       expect(manifests, hasLength(1));
       expect(manifests.single.id, 'postgres');
       expect(manifests.single.runtime, InfraRuntimeKind.podmanQuadlet);
+      expect(manifests.single.units, [
+        'app_postgres.service',
+        'app_postgres-network.service',
+      ]);
       expect(
-        manifests.single.containerFilePath,
-        '/project/.project/infrastructure/services/postgres/app_postgres.container',
+        manifests.single.quadlets.map((quadlet) => quadlet.filePath),
+        containsAll([
+          '/project/.project/infrastructure/services/postgres/app_postgres.container',
+          '/project/.project/infrastructure/services/postgres/app_postgres.network',
+        ]),
       );
     });
   });
@@ -78,9 +85,9 @@ void main() {
       expect(issues, isEmpty);
     });
 
-    test('reports service id and unit mismatches', () async {
+    test('reports service id and invalid quadlet units', () async {
       final fs = MemoryFileSystem.test();
-      _writeService(fs, serviceId: 'wrong', unit: 'wrong.service');
+      _writeService(fs, serviceId: 'wrong', unit: 'wrong');
       final manifest =
           await InfraRepository(
             infraDir: '/project/.project/infrastructure',
@@ -98,7 +105,7 @@ void main() {
       );
       expect(
         issues.map((issue) => issue.message).join('\n'),
-        contains('must match container file unit'),
+        contains('must end with .service'),
       );
     });
   });
@@ -108,7 +115,7 @@ void main() {
       'install dry-run reports symlink actions without writing files',
       () async {
         final fs = MemoryFileSystem.test();
-        _writeService(fs);
+        _writeService(fs, includeNetwork: true);
         final manifest = await InfraRepository(
           infraDir: '/project/.project/infrastructure',
           fs: fs,
@@ -125,6 +132,7 @@ void main() {
         );
 
         expect(result.actions.join('\n'), contains('app_postgres.container'));
+        expect(result.actions.join('\n'), contains('app_postgres.network'));
         expect(
           await fs
               .link(
@@ -165,6 +173,7 @@ void _writeService(
   MemoryFileSystem fs, {
   String serviceId = 'postgres',
   String unit = 'app_postgres.service',
+  bool includeNetwork = false,
 }) {
   final serviceDir = fs.directory(
     '/project/.project/infrastructure/services/postgres',
@@ -174,26 +183,36 @@ void _writeService(
   fs
       .file('${serviceDir.path}/app_postgres.container')
       .writeAsStringSync('[Container]\nImage=postgres:16\n');
+  if (includeNetwork) {
+    fs
+        .file('${serviceDir.path}/app_postgres.network')
+        .writeAsStringSync('[Network]\nNetworkName=app_postgres\n');
+  }
   fs
       .file('${serviceDir.path}/configure.schema.json')
       .writeAsStringSync('{"type":"object"}');
   fs
       .file('${serviceDir.path}/init.schema.json')
       .writeAsStringSync('{"type":"object"}');
+  final networkQuadlet = includeNetwork
+      ? '''
+  - file: app_postgres.network
+'''
+      : '';
   fs.file('${serviceDir.path}/manifest.yaml').writeAsStringSync('''
-service:
-  id: $serviceId
-  name: PostgreSQL
-  unit: $unit
-  container_name: app_postgres
+id: $serviceId
+name: PostgreSQL
 
 runtime:
   type: podman-quadlet
 
-container:
-  file: app_postgres.container
-  dropins_dir: app_postgres.container.d
-  profiles_dir: app_postgres.profiles.d
+quadlets:
+  - file: app_postgres.container
+    unit: $unit
+    container_name: app_postgres
+    dropins_dir: app_postgres.container.d
+    profiles_dir: app_postgres.profiles.d
+$networkQuadlet
 
 schemas:
   configure: configure.schema.json
@@ -202,18 +221,19 @@ schemas:
 }
 
 Map<String, Object?> _manifestObject() => {
-  'service': {
-    'id': 'postgres',
-    'name': 'PostgreSQL',
-    'unit': 'app_postgres.service',
-    'container_name': 'app_postgres',
-  },
+  'id': 'postgres',
+  'name': 'PostgreSQL',
   'runtime': {'type': 'podman-quadlet'},
-  'container': {
-    'file': 'app_postgres.container',
-    'dropins_dir': 'app_postgres.container.d',
-    'profiles_dir': 'app_postgres.profiles.d',
-  },
+  'quadlets': [
+    {
+      'file': 'app_postgres.container',
+      'unit': 'app_postgres.service',
+      'container_name': 'app_postgres',
+      'dropins_dir': 'app_postgres.container.d',
+      'profiles_dir': 'app_postgres.profiles.d',
+    },
+    {'file': 'app_postgres.network'},
+  ],
   'schemas': {'configure': 'configure.schema.json', 'init': 'init.schema.json'},
 };
 

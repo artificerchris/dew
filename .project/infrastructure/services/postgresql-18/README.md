@@ -24,5 +24,5 @@ dew infra down postgresql-18
 
 The named volume is intentionally retained after stopping the service.
 
-Service-specific configure and init schemas live under `schemas/` and are
-referenced from `manifest.yaml`.
+Service-specific configure and init schemas live under `schemas/`. The manifest
+declares the PostgreSQL container under its `quadlets` list.

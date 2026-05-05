@@ -127,31 +127,46 @@ class InfraValidator {
     if (manifest.id != dirId) {
       issue(
         manifest.manifestPath,
-        'service.id "${manifest.id}" must match directory "$dirId".',
-      );
-    }
-    if (!manifest.unit.endsWith('.service')) {
-      issue(manifest.manifestPath, 'service.unit must end with .service.');
-    }
-    if (manifest.unit != manifest.expectedUnit) {
-      issue(
-        manifest.manifestPath,
-        'service.unit "${manifest.unit}" must match container file unit '
-        '"${manifest.expectedUnit}".',
+        'id "${manifest.id}" must match directory "$dirId".',
       );
     }
 
-    await _requireFile(manifest, manifest.containerFilePath, issues);
-    await _requireDirectoryIfDeclared(
-      manifest,
-      manifest.dropinsDirPath,
-      issues,
-    );
-    await _requireDirectoryIfDeclared(
-      manifest,
-      manifest.profilesDirPath,
-      issues,
-    );
+    if (manifest.quadlets.isEmpty) {
+      issue(manifest.manifestPath, 'quadlets must contain at least one file.');
+    }
+    final quadletFiles = <String>{};
+    final quadletUnits = <String>{};
+    for (final quadlet in manifest.quadlets) {
+      if (!quadletFiles.add(quadlet.file)) {
+        issue(
+          manifest.manifestPath,
+          'quadlet file "${quadlet.file}" is declared more than once.',
+        );
+      }
+      if (!quadletUnits.add(quadlet.serviceUnit)) {
+        issue(
+          manifest.manifestPath,
+          'quadlet unit "${quadlet.serviceUnit}" is declared more than once.',
+        );
+      }
+      if (!quadlet.serviceUnit.endsWith('.service')) {
+        issue(
+          manifest.manifestPath,
+          'quadlet unit "${quadlet.serviceUnit}" must end with .service.',
+        );
+      }
+      await _requireFile(manifest, quadlet.filePath, issues);
+      await _requireDirectoryIfDeclared(
+        manifest,
+        quadlet.dropinsDirPath,
+        issues,
+      );
+      await _requireDirectoryIfDeclared(
+        manifest,
+        quadlet.profilesDirPath,
+        issues,
+      );
+    }
     await _validateJsonSchema(
       manifest,
       label: 'configure schema',

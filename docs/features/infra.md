@@ -27,24 +27,29 @@ workflows.
 ## Manifest
 
 ```yaml
-service:
-  id: postgres
-  name: PostgreSQL
-  unit: app_postgres.service
-  container_name: app_postgres
+id: postgres
+name: PostgreSQL
 
 runtime:
   type: podman-quadlet
 
-container:
-  file: app_postgres.container
-  dropins_dir: app_postgres.container.d
-  profiles_dir: app_postgres.profiles.d
+quadlets:
+  - file: app_postgres.container
+    unit: app_postgres.service
+    container_name: app_postgres
+    dropins_dir: app_postgres.container.d
+    profiles_dir: app_postgres.profiles.d
 
 schemas:
   configure: schemas/configure.schema.json
   init: schemas/init.schema.json
 ```
+
+The `quadlets` list can contain any supported Podman Quadlet source type:
+`.artifact`, `.build`, `.container`, `.image`, `.kube`, `.network`, `.pod`, and
+`.volume`. If `unit` is omitted, Dew derives the default generated systemd unit
+from the Quadlet filename. Declare `unit` when the Quadlet file uses a
+`ServiceName=` override.
 
 The package-level schema for this file is
 `packages/infra/schemas/service-manifest.schema.json`.
@@ -73,7 +78,7 @@ and podman actions without applying them. Use `--scope user` for the default
 user systemd path or `--scope system` for `/etc/containers/systemd`.
 
 `dew infra up` installs missing Quadlet files, reloads systemd, then starts the
-unit.
+declared units.
 
 ## Samples
 
