@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:dew_core/dew_core.dart';
+import 'package:dew_infra/dew_infra.dart' as infra;
 import 'package:dew_kanban/dew_kanban.dart' as kanban;
 import 'package:dew_mcp/dew_mcp.dart' as mcp;
 import 'package:dew_vault/dew_vault.dart' as vault;
@@ -9,6 +10,7 @@ import 'package:dew_vault/dew_vault.dart' as vault;
 Future<void> main(List<String> args) async {
   final commandRegistry = CommandRegistry();
 
+  infra.registerCommands(commandRegistry);
   kanban.registerCommands(commandRegistry);
   vault.registerCommands(commandRegistry);
   mcp.registerCommands(commandRegistry);

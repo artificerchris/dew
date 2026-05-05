@@ -9,6 +9,7 @@ environment:
 workspace:
   - packages/cli
   - packages/core
+  - packages/infra
   - packages/kanban
   - packages/mcp
   - packages/vault

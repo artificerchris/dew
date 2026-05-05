@@ -9,6 +9,7 @@ Welcome to the documentation for the Dew project management tool!
 ### Features
 
 - [Kanban Board](./features/kanban.md) — Visualize and manage tasks in a column-based workflow
+- [Infrastructure](./features/infra.md) — Manage local service manifests and Podman Quadlets
 - [MCP Server](./features/mcp.md) — AI agent integration via the Model Context Protocol
 
 ## Package Architecture
@@ -19,6 +20,7 @@ Dew is structured as a Dart workspace with the following packages:
 | ----------------- | -------------------------------------------------------------------------------------------- |
 | `packages/cli`    | The `dew` command-line tool. Wires all packages together at startup.                         |
 | `packages/core`   | Shared foundation: `DewCommand`, `DewToolCommand` mixin, `CommandRegistry`, and `DewConfig`. |
+| `packages/infra`  | Infrastructure service discovery, validation, and runtime lifecycle commands.                |
 | `packages/kanban` | Kanban board logic. Each command automatically registers itself as an MCP tool.              |
 | `packages/mcp`    | The MCP server. Collects tools from `CommandRegistry` and serves them over stdio.            |
 

@@ -18,6 +18,12 @@ stats   board   config   tui
 
 Tickets are stored as `.project/kanban/<column>/<ID>.md` files. Labels, milestones, typed bidirectional links, and inline comments are all first-class citizens. See the [Kanban documentation](./docs/features/kanban.md) for the full command reference.
 
+### Infrastructure
+
+`dew infra` discovers services under `.project/infrastructure/services`, validates
+their manifests and schemas, and manages Podman Quadlets through systemd. The
+runtime boundary is explicit so other container backends can be added later.
+
 ### Interactive TUI
 
 `dew kanban tui` opens a full Trello-style terminal board with three modes:
@@ -60,6 +66,7 @@ Dew reads `.project/dew.yaml` for board columns, ticket types, ID prefix, and MC
 ## Documentation
 
 - [Full documentation index](./docs/index.md)
+- [Infrastructure](./docs/features/infra.md) — service manifests, Quadlet install, lifecycle commands
 - [Kanban board](./docs/features/kanban.md) — CLI commands, TUI keybindings, ticket format
 - [MCP server](./docs/features/mcp.md) — AI agent integration
 - [Configuration reference](./docs/config.md)

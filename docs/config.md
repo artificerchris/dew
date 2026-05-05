@@ -13,6 +13,9 @@ your-project/
 Path-like values in `dew.yaml` are resolved relative to `.project/dew.yaml`
 unless they are absolute (for example, paths under `dew.vault`).
 
+Infrastructure services are not configured in `dew.yaml`; they are discovered
+from `.project/infrastructure/services/*/metadata.toml`.
+
 ## Full Schema
 
 ```yaml
