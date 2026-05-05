@@ -2,3 +2,7 @@
 
 ## Dart
 .dart_tool/
+
+## JetBrains
+.idea/
+*.iml
