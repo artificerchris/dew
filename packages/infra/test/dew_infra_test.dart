@@ -41,6 +41,85 @@ void main() {
         ]),
       );
     });
+
+    test('registerCommands exposes infra MCP tools for each CLI path', () {
+      final registry = CommandRegistry();
+      registerCommands(registry);
+
+      expect(
+        registry.mcpTools.map((tool) => tool.name),
+        containsAll([
+          'infra_list_services',
+          'infra_show_service',
+          'infra_validate_services',
+          'infra_configure_service',
+          'infra_configure_schema',
+          'infra_configure_show',
+          'infra_configure_apply',
+          'infra_init_service',
+          'infra_init_schema',
+          'infra_init_run',
+          'infra_install_service',
+          'infra_uninstall_service',
+          'infra_up_service',
+          'infra_down_service',
+          'infra_restart_service',
+          'infra_status_service',
+          'infra_logs',
+          'infra_delete_service',
+        ]),
+      );
+    });
+
+    test('infra MCP tools discover services and apply schema values', () async {
+      final fs = MemoryFileSystem.test();
+      _writeProjectConfig(fs);
+      _writeService(fs);
+      final registry = CommandRegistry();
+      registerCommands(registry, fs: fs);
+      final tools = {for (final tool in registry.mcpTools) tool.name: tool};
+
+      final services =
+          jsonDecode(
+                await tools['infra_list_services']!.handler({
+                  'project': '/project',
+                }),
+              )
+              as List<dynamic>;
+      expect(services.single['id'], 'postgres');
+
+      final schema =
+          jsonDecode(
+                await tools['infra_configure_schema']!.handler({
+                  'project': '/project',
+                  'service': 'postgres',
+                }),
+              )
+              as Map<String, dynamic>;
+      expect(schema['schema'], containsPair('type', 'object'));
+
+      final applied =
+          jsonDecode(
+                await tools['infra_configure_apply']!.handler({
+                  'project': '/project',
+                  'service': 'postgres',
+                  'values': {'port': 5432},
+                  'set': ['credentials.user=dew'],
+                }),
+              )
+              as Map<String, dynamic>;
+      final config = applied['config'] as Map<String, dynamic>;
+      expect(config['port'], 5432);
+      expect(config['credentials'], containsPair('user', 'dew'));
+      expect(
+        fs
+            .file(
+              '/project/.project/infrastructure/services/postgres/config/configure.json',
+            )
+            .existsSync(),
+        isTrue,
+      );
+    });
   });
 
   group('InfraRepository', () {
@@ -233,6 +312,11 @@ schemas:
   configure: configure.schema.json
   init: init.schema.json
 ''');
+}
+
+void _writeProjectConfig(MemoryFileSystem fs) {
+  fs.directory('/project/.project').createSync(recursive: true);
+  fs.file('/project/.project/dew.yaml').writeAsStringSync('dew: {}\n');
 }
 
 Map<String, Object?> _manifestObject() => {

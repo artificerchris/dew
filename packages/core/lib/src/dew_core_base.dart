@@ -158,6 +158,9 @@ class CommandRegistry {
     final tools = <McpTool>[];
     void collect(Command<void> cmd) {
       if (cmd is DewToolCommand) tools.add(cmd.toMcpTool());
+      if (cmd is McpToolProvider) {
+        tools.addAll((cmd as McpToolProvider).tools);
+      }
       for (final sub in cmd.subcommands.values) {
         collect(sub);
       }
