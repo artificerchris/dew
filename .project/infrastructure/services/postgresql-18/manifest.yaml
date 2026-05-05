@@ -13,5 +13,5 @@ container:
   profiles_dir: dew_postgresql_18.profiles.d
 
 schemas:
-  configure: configure.schema.json
-  init: init.schema.json
+  configure: schemas/configure.schema.json
+  init: schemas/init.schema.json

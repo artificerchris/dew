@@ -18,8 +18,9 @@ workflows.
         ├── app_postgres.container
         ├── app_postgres.container.d/
         ├── app_postgres.profiles.d/
-        ├── configure.schema.json
-        ├── init.schema.json
+        ├── schemas/
+        │   ├── configure.schema.json
+        │   └── init.schema.json
         └── config/
 ```
 
@@ -41,8 +42,8 @@ container:
   profiles_dir: app_postgres.profiles.d
 
 schemas:
-  configure: configure.schema.json
-  init: init.schema.json
+  configure: schemas/configure.schema.json
+  init: schemas/init.schema.json
 ```
 
 The package-level schema for this file is
