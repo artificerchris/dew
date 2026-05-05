@@ -8,7 +8,7 @@ Image=docker.io/library/postgres:18
 ContainerName=dew_keycloak-postgresql
 Network=dew_keycloak.network
 NetworkAlias=postgres
-Volume=dew_keycloak-postgresql.volume:/var/lib/postgresql/data
+Volume=dew_keycloak-postgresql.volume:/var/lib/postgresql
 Environment=POSTGRES_DB=keycloak
 Environment=POSTGRES_USER=keycloak
 Environment=POSTGRES_PASSWORD=keycloak_dev_password

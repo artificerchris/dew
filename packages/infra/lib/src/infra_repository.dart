@@ -167,6 +167,9 @@ class InfraValidator {
         issues,
       );
     }
+    for (final path in manifest.filePaths) {
+      await _requireFile(manifest, path, issues);
+    }
     await _validateJsonSchema(
       manifest,
       label: 'configure schema',

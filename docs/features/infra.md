@@ -51,6 +51,9 @@ The `quadlets` list can contain any supported Podman Quadlet source type:
 from the Quadlet filename. Declare `unit` when the Quadlet file uses a
 `ServiceName=` override.
 
+Use `files` for non-Quadlet assets that must be installed beside the Quadlet
+files, such as a `Containerfile` used by a `.build` unit.
+
 The package-level schema for this file is
 `packages/infra/schemas/service-manifest.schema.json`.
 

@@ -10,7 +10,7 @@ Environment=POSTGRES_DB=dew
 Environment=POSTGRES_USER=dew
 Environment=POSTGRES_PASSWORD=dew_dev_password
 PublishPort=127.0.0.1:5432:5432
-Volume=dew_postgresql-18_data:/var/lib/postgresql/data:Z
+Volume=dew_postgresql-18_data:/var/lib/postgresql:Z
 HealthCmd=pg_isready -U dew -d dew
 HealthInterval=10s
 HealthTimeout=5s

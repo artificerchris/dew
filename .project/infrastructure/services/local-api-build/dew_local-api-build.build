@@ -4,6 +4,7 @@ File=Containerfile
 SetWorkingDirectory=unit
 
 [Service]
+RemainAfterExit=yes
 TimeoutStartSec=900
 
 [Install]

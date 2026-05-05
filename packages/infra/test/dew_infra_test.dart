@@ -115,7 +115,7 @@ void main() {
       'install dry-run reports symlink actions without writing files',
       () async {
         final fs = MemoryFileSystem.test();
-        _writeService(fs, includeNetwork: true);
+        _writeService(fs, includeNetwork: true, includeFile: true);
         final manifest = await InfraRepository(
           infraDir: '/project/.project/infrastructure',
           fs: fs,
@@ -133,6 +133,7 @@ void main() {
 
         expect(result.actions.join('\n'), contains('app_postgres.container'));
         expect(result.actions.join('\n'), contains('app_postgres.network'));
+        expect(result.actions.join('\n'), contains('Containerfile'));
         expect(
           await fs
               .link(
@@ -174,6 +175,7 @@ void _writeService(
   String serviceId = 'postgres',
   String unit = 'app_postgres.service',
   bool includeNetwork = false,
+  bool includeFile = false,
 }) {
   final serviceDir = fs.directory(
     '/project/.project/infrastructure/services/postgres',
@@ -188,6 +190,11 @@ void _writeService(
         .file('${serviceDir.path}/app_postgres.network')
         .writeAsStringSync('[Network]\nNetworkName=app_postgres\n');
   }
+  if (includeFile) {
+    fs
+        .file('${serviceDir.path}/Containerfile')
+        .writeAsStringSync('FROM scratch\n');
+  }
   fs
       .file('${serviceDir.path}/configure.schema.json')
       .writeAsStringSync('{"type":"object"}');
@@ -197,6 +204,13 @@ void _writeService(
   final networkQuadlet = includeNetwork
       ? '''
   - file: app_postgres.network
+'''
+      : '';
+  final files = includeFile
+      ? '''
+files:
+  - Containerfile
+
 '''
       : '';
   fs.file('${serviceDir.path}/manifest.yaml').writeAsStringSync('''
@@ -214,6 +228,7 @@ quadlets:
     profiles_dir: app_postgres.profiles.d
 $networkQuadlet
 
+$files
 schemas:
   configure: configure.schema.json
   init: init.schema.json
@@ -234,6 +249,7 @@ Map<String, Object?> _manifestObject() => {
     },
     {'file': 'app_postgres.network'},
   ],
+  'files': ['Containerfile'],
   'schemas': {'configure': 'configure.schema.json', 'init': 'init.schema.json'},
 };
 

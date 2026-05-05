@@ -61,6 +61,15 @@
         }
       }
     },
+    "files": {
+      "type": "array",
+      "description": "Additional files installed beside Quadlets, such as Containerfiles for build contexts.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[^/].*$"
+      }
+    },
     "schemas": {
       "type": "object",
       "additionalProperties": false,

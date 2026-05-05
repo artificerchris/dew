@@ -11,6 +11,9 @@ quadlets:
     unit: dew_local-api-build.service
     container_name: dew_local-api-build
 
+files:
+  - Containerfile
+
 schemas:
   configure: schemas/configure.schema.json
   init: schemas/init.schema.json

@@ -222,6 +222,12 @@ class PodmanQuadletRuntime implements ContainerRuntime {
           await fs.link(target).exists() || await fs.file(target).exists();
       if (!exists) return false;
     }
+    for (final file in manifest.files) {
+      final target = _targetFilePath(file, scope);
+      final exists =
+          await fs.link(target).exists() || await fs.file(target).exists();
+      if (!exists) return false;
+    }
     return true;
   }
 
@@ -268,6 +274,14 @@ class PodmanQuadletRuntime implements ContainerRuntime {
         }
       }
     }
+    for (var i = 0; i < manifest.files.length; i++) {
+      await _link(
+        actions,
+        dryRun,
+        manifest.filePaths[i],
+        _targetFilePath(manifest.files[i], scope),
+      );
+    }
 
     return InfraRuntimeResult(actions: actions);
   }
@@ -290,6 +304,9 @@ class PodmanQuadletRuntime implements ContainerRuntime {
           p.join(targetDir, p.basename(dropinsPath)),
         );
       }
+    }
+    for (final file in manifest.files) {
+      await _deletePath(actions, dryRun, _targetFilePath(file, scope));
     }
     return InfraRuntimeResult(actions: actions);
   }
@@ -409,6 +426,9 @@ class PodmanQuadletRuntime implements ContainerRuntime {
         p.basename(quadlet.file),
       );
 
+  String _targetFilePath(String file, InfraScope scope) =>
+      p.join(quadletSearchPath(scope, environment: environment), file);
+
   Future<void> _link(
     List<String> actions,
     bool dryRun,
@@ -416,6 +436,7 @@ class PodmanQuadletRuntime implements ContainerRuntime {
     String target,
   ) async {
     await _action(actions, dryRun, 'link $source -> $target', () async {
+      await fs.directory(p.dirname(target)).create(recursive: true);
       await _deleteIfExists(target);
       await fs.link(target).create(source, recursive: true);
     });
