@@ -14,7 +14,7 @@ The sample binds PostgreSQL to `127.0.0.1:5432` with:
 - database: `dew`
 - user: `dew`
 - password: `dew_dev_password`
-- data volume: `dew_postgresql_18_data`
+- data volume: `dew_postgresql-18_data`
 
 Stop it with:
 

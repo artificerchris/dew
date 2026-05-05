@@ -30,7 +30,7 @@
     "volume": {
       "type": "string",
       "minLength": 1,
-      "default": "dew_postgresql_18_data"
+      "default": "dew_postgresql-18_data"
     }
   }
 }
