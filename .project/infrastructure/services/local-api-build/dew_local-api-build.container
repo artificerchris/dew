@@ -1,0 +1,16 @@
+[Unit]
+Description=Dew sample local API build
+Requires=dew_local-api-build.build
+After=dew_local-api-build.build
+
+[Container]
+Image=dew_local-api-build.build
+ContainerName=dew_local-api-build
+PublishPort=127.0.0.1:8090:8080
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

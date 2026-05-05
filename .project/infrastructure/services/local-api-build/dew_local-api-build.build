@@ -1,0 +1,10 @@
+[Build]
+ImageTag=localhost/dew_local-api-build:latest
+File=Containerfile
+SetWorkingDirectory=unit
+
+[Service]
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

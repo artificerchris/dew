@@ -1,0 +1,8 @@
+FROM docker.io/library/alpine:3.23
+
+RUN mkdir -p /srv/www \
+  && printf '{"service":"local-api-build","status":"ok"}\n' > /srv/www/index.html
+
+EXPOSE 8080
+
+CMD ["busybox", "httpd", "-f", "-p", "8080", "-h", "/srv/www"]

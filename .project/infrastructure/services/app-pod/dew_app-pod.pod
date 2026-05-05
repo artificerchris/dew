@@ -1,0 +1,6 @@
+[Pod]
+PodName=dew_app-pod
+PublishPort=127.0.0.1:8088:80
+
+[Install]
+WantedBy=default.target

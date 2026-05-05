@@ -1,0 +1,16 @@
+id: local-api-build
+name: Local API Build
+
+runtime:
+  type: podman-quadlet
+
+quadlets:
+  - file: dew_local-api-build.build
+    unit: dew_local-api-build-build.service
+  - file: dew_local-api-build.container
+    unit: dew_local-api-build.service
+    container_name: dew_local-api-build
+
+schemas:
+  configure: schemas/configure.schema.json
+  init: schemas/init.schema.json

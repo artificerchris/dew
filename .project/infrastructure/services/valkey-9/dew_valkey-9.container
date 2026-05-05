@@ -1,0 +1,18 @@
+[Unit]
+Description=Dew sample Valkey 9
+Requires=dew_valkey-9.volume
+After=dew_valkey-9.volume
+
+[Container]
+Image=docker.io/valkey/valkey:9.0.3-alpine
+ContainerName=dew_valkey-9
+PublishPort=127.0.0.1:6379:6379
+Volume=dew_valkey-9.volume:/data
+Exec=valkey-server --save 60 1 --loglevel warning
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

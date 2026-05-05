@@ -1,0 +1,16 @@
+id: valkey-9
+name: Valkey 9
+
+runtime:
+  type: podman-quadlet
+
+quadlets:
+  - file: dew_valkey-9.volume
+    unit: dew_valkey-9-volume.service
+  - file: dew_valkey-9.container
+    unit: dew_valkey-9.service
+    container_name: dew_valkey-9
+
+schemas:
+  configure: schemas/configure.schema.json
+  init: schemas/init.schema.json

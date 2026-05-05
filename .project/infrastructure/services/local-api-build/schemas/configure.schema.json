@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://artificery.dev/dew/samples/local-api-build/configure.schema.json",
+  "title": "Local API Build Sample Configuration",
+  "description": "Configuration values represented by the sample local build Quadlets.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "host_port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 8090
+    },
+    "image_tag": {
+      "type": "string",
+      "minLength": 1,
+      "default": "localhost/dew_local-api-build:latest"
+    }
+  }
+}

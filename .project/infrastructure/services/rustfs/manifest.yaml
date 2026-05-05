@@ -1,0 +1,18 @@
+id: rustfs
+name: RustFS
+
+runtime:
+  type: podman-quadlet
+
+quadlets:
+  - file: dew_rustfs.network
+    unit: dew_rustfs-network.service
+  - file: dew_rustfs.volume
+    unit: dew_rustfs-volume.service
+  - file: dew_rustfs.container
+    unit: dew_rustfs.service
+    container_name: dew_rustfs
+
+schemas:
+  configure: schemas/configure.schema.json
+  init: schemas/init.schema.json

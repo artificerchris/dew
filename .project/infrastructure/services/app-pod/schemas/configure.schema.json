@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://artificery.dev/dew/samples/app-pod/configure.schema.json",
+  "title": "App Pod Sample Configuration",
+  "description": "Configuration values represented by the sample pod Quadlets.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "host_port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 8088
+    },
+    "pod_name": {
+      "type": "string",
+      "minLength": 1,
+      "default": "dew_app-pod"
+    }
+  }
+}

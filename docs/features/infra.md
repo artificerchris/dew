@@ -85,8 +85,15 @@ declared units.
 The Dew repository includes sample service bringups under
 `.project/infrastructure/services/`.
 
-`postgresql-18` brings up a local PostgreSQL 18 container through Podman
-Quadlets:
+Available samples:
+
+- `postgresql-18`: single PostgreSQL 18 container with a named data volume.
+- `valkey-9`: cache container backed by a Quadlet volume.
+- `rustfs`: S3-compatible object storage on a Quadlet network and volume.
+- `keycloak`: multi-container Keycloak and PostgreSQL service on a shared
+  network.
+- `app-pod`: Podman pod with web and sidecar containers.
+- `local-api-build`: local image build consumed by a container Quadlet.
 
 ```bash
 dew infra validate postgresql-18
