@@ -26,7 +26,9 @@ Dew is structured as a Dart workspace with the following packages:
 
 ### How commands become MCP tools
 
-Every CLI command that mixes in `DewToolCommand` is automatically registered as an MCP tool — no separate registration needed. The mixin derives the JSON Schema for the tool's input from the command's own `ArgParser`, so argument definitions are written exactly once.
+Every CLI command that mixes in `DewToolCommand` is automatically registered as
+an MCP tool. Commands that need more granular tool paths can also implement
+`McpToolProvider` to expose additional tools.
 
 ```text
 ArgParser definition

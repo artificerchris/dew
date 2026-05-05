@@ -6,7 +6,7 @@ import '../kanban_config.dart';
 class GetConfigCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  GetConfigCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs;
+  GetConfigCommand({this._fs = const LocalFileSystem()});
   @override
   final String name = 'config';
 

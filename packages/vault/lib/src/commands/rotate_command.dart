@@ -10,7 +10,7 @@ import '../vault_store.dart';
 class RotateCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  RotateCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  RotateCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption('name', help: 'Secret name to rotate; omit to rotate vault password.')
       ..addOption(

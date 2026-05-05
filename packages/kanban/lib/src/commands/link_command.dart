@@ -9,7 +9,7 @@ import '../ticket_store.dart';
 class LinkCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  LinkCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  LinkCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption('id', abbr: 'i', mandatory: true, help: 'Source ticket ID.')
       ..addOption(
@@ -44,8 +44,9 @@ class LinkCommand extends DewCommand with DewToolCommand {
     final targetId = '${args['target']}'.toUpperCase();
     final type = '${args['type']}';
 
-    if (id == targetId)
+    if (id == targetId) {
       throw ArgumentError('A ticket cannot be linked to itself.');
+    }
 
     final context = await ProjectContext.find(fs: _fs);
     final store = TicketStore(

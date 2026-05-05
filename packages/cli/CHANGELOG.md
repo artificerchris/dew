@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 — 2026-05-05
+
+Infra release.
+
+- Added the `dew infra` command group to the CLI.
+- Registered the infra package alongside kanban, MCP, and vault packages.
+- Updated CLI dependencies for the `0.4.0` package set.
+
 ## 0.1.0 — 2026-04-25
 
 Initial release.

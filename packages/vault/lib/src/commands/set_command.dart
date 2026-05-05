@@ -9,7 +9,7 @@ import '../vault_store.dart';
 class SetCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  SetCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  SetCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption(
         'name',

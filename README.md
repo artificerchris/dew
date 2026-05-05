@@ -36,7 +36,10 @@ The TUI auto-refreshes when ticket files change on disk, so it stays in sync whe
 
 ### MCP Server
 
-`dew mcp serve` starts an MCP-compliant stdio server that exposes every kanban command as an MCP tool. AI agents (GitHub Copilot, Claude, etc.) can create tickets, move cards, search, and comment — using the exact same logic as the CLI. No separate tool definitions needed: every command that mixes in `DewToolCommand` is registered automatically. See the [MCP documentation](./docs/features/mcp.md).
+`dew mcp serve` starts an MCP-compliant stdio server that exposes Dew commands
+as MCP tools. AI agents (GitHub Copilot, Claude, etc.) can create tickets, move
+cards, search, comment, and manage project infrastructure through the same logic
+as the CLI. See the [MCP documentation](./docs/features/mcp.md).
 
 ## Installation
 

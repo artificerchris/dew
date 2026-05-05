@@ -12,7 +12,7 @@ String renderVaultOutput({
   if (format == 'json') {
     final payload = <String, dynamic>{
       'message': message,
-      if (json != null) ...json,
+      ...?json,
     };
     return const JsonEncoder.withIndent('  ').convert(payload);
   }

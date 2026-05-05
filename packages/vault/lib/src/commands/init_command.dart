@@ -8,7 +8,7 @@ import '../command_output.dart';
 class VaultInitCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  VaultInitCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  VaultInitCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption(
         'password-file',

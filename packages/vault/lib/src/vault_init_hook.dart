@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 class VaultInitHook implements DewInitHook {
   final FileSystem _fs;
 
-  VaultInitHook({FileSystem fs = const LocalFileSystem()}) : _fs = fs;
+  VaultInitHook({this._fs = const LocalFileSystem()});
 
   @override
   Future<void> onInit(

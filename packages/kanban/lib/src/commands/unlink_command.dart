@@ -8,7 +8,7 @@ import '../ticket_store.dart';
 class UnlinkCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  UnlinkCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  UnlinkCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption('id', abbr: 'i', mandatory: true, help: 'Source ticket ID.')
       ..addOption(

@@ -1,6 +1,6 @@
 name: dew_workspace
 description: A Dart workspace for the dew project management tool.
-version: 0.1.0
+version: 0.4.0
 repository: https://github.com/artificerchris/dew
 publish_to: none
 
@@ -15,11 +15,10 @@ workspace:
   - packages/vault
 
 dev_dependencies:
+  dart_mcp: ^0.5.0
   file: ^7.0.1
   lints: ^6.0.0
   melos: ^7.0.0
-
-
 melos:
   scripts:
     analyze:

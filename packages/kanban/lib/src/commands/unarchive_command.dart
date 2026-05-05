@@ -9,7 +9,7 @@ import '../ticket_store.dart';
 class UnarchiveCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  UnarchiveCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  UnarchiveCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption(
         'id',

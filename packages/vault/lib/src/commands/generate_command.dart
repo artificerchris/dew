@@ -9,7 +9,7 @@ import '../vault_generators.dart';
 class GenerateCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  GenerateCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  GenerateCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption(
         'generator',

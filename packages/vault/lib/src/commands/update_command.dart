@@ -9,7 +9,7 @@ import '../command_output.dart';
 class UpdateCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  UpdateCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  UpdateCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption(
         'name',

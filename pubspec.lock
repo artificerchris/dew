@@ -154,7 +154,7 @@ packages:
     source: hosted
     version: "4.1.4"
   dart_mcp:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: dart_mcp
       sha256: "92a2ee1cca577ed54fa4f3d5ae0e80ce2dd61e1892e793bb4f951b30eab9c4b1"

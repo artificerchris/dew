@@ -9,7 +9,7 @@ import '../vault_store.dart';
 class RenameCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  RenameCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  RenameCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption(
         'from',

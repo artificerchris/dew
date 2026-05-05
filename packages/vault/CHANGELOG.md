@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — 2026-05-05
+
+Release alignment for the `0.4.0` Dew package set.
+
+- Updated the `dew_core` dependency constraint for the infra release.
+- Published vault with the SDK floor and config path fixes from the development
+  branch.
+- Applied analyzer fixes for current Dart lint recommendations.
+
 ## 0.3.0 — 2026-05-03
 
 Implemented vault command behavior end-to-end and completed release-readiness features.

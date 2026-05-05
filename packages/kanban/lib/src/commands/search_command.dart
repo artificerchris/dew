@@ -8,7 +8,7 @@ import '../ticket_store.dart';
 class SearchCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  SearchCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  SearchCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption(
         'query',

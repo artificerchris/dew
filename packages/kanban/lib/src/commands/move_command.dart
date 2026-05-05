@@ -8,7 +8,7 @@ import '../ticket_store.dart';
 class MoveCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  MoveCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  MoveCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption('id', abbr: 'i', mandatory: true, help: 'Ticket ID.')
       ..addOption(

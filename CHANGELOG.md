@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-05
+
+### Added in 0.4.0
+
+- Added `dew infra` for project infrastructure service discovery, validation,
+  configuration payloads, initialization payloads, lifecycle control, status,
+  logs, and cleanup.
+- Added Podman Quadlet runtime support with a runtime boundary for future
+  container backends.
+- Added manifest, configure, and init JSON Schema handling for infrastructure
+  services.
+- Added sample infrastructure services for PostgreSQL 18, Valkey, RustFS,
+  Keycloak, pods, networks, volumes, and local image builds.
+- Exposed every `dew infra` CLI path through Dew MCP tools, including
+  path-specific configure/init tools.
+
+### Changed in 0.4.0
+
+- Extended MCP tool discovery so commands can provide extra path-specific tools
+  beyond one tool per subcommand.
+- Raised package versions to `0.4.0` for the infra release.
+- Cleaned existing analyzer info findings in kanban and vault ahead of release.
+
 ## [0.1.0] - 2026-04-25
 
 ### Added
@@ -86,5 +109,6 @@ Full set of kanban subcommands, each also registered as an MCP tool automaticall
 - `ProjectDirs` with injectable filesystem abstraction (`package:file`) for
   testable path resolution.
 
-[Unreleased]: https://github.com/artificerchris/dew/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/artificerchris/dew/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/artificerchris/dew/compare/v0.3.0...v0.4.0
 [0.1.0]: https://github.com/artificerchris/dew/releases/tag/v0.1.0
