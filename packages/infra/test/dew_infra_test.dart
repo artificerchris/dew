@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:io' as io;
+
 import 'package:dew_core/dew_core.dart';
 import 'package:dew_infra/dew_infra.dart';
 import 'package:file/memory.dart';
+import 'package:json_schema/json_schema.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -40,7 +44,7 @@ void main() {
   });
 
   group('InfraRepository', () {
-    test('discovers service metadata', () async {
+    test('discovers service manifests', () async {
       final fs = MemoryFileSystem.test();
       _writeService(fs);
 
@@ -81,8 +85,8 @@ void main() {
           await InfraRepository(
             infraDir: '/project/.project/infrastructure',
             fs: fs,
-          ).loadFromMetadataPath(
-            '/project/.project/infrastructure/services/postgres/metadata.toml',
+          ).loadFromManifestPath(
+            '/project/.project/infrastructure/services/postgres/manifest.yaml',
             serviceDir: '/project/.project/infrastructure/services/postgres',
           );
 
@@ -143,6 +147,18 @@ void main() {
       expect(quadletSearchPath(InfraScope.system), '/etc/containers/systemd');
     });
   });
+
+  group('service-manifest.schema.json', () {
+    test('validates the manifest contract shape', () {
+      final schema = JsonSchema.create(
+        jsonDecode(_schemaFile().readAsStringSync()),
+      );
+
+      final result = schema.validate(_manifestObject());
+
+      expect(result.isValid, isTrue, reason: result.errors.join('\n'));
+    });
+  });
 }
 
 void _writeService(
@@ -164,23 +180,50 @@ void _writeService(
   fs
       .file('${serviceDir.path}/init.schema.json')
       .writeAsStringSync('{"type":"object"}');
-  fs.file('${serviceDir.path}/metadata.toml').writeAsStringSync('''
-[service]
-id = "$serviceId"
-name = "PostgreSQL"
-unit = "$unit"
-container_name = "app_postgres"
+  fs.file('${serviceDir.path}/manifest.yaml').writeAsStringSync('''
+service:
+  id: $serviceId
+  name: PostgreSQL
+  unit: $unit
+  container_name: app_postgres
 
-[runtime]
-type = "podman-quadlet"
+runtime:
+  type: podman-quadlet
 
-[container]
-file = "app_postgres.container"
-dropins_dir = "app_postgres.container.d"
-profiles_dir = "app_postgres.profiles.d"
+container:
+  file: app_postgres.container
+  dropins_dir: app_postgres.container.d
+  profiles_dir: app_postgres.profiles.d
 
-[schemas]
-configure = "configure.schema.json"
-init = "init.schema.json"
+schemas:
+  configure: configure.schema.json
+  init: init.schema.json
 ''');
+}
+
+Map<String, Object?> _manifestObject() => {
+  'service': {
+    'id': 'postgres',
+    'name': 'PostgreSQL',
+    'unit': 'app_postgres.service',
+    'container_name': 'app_postgres',
+  },
+  'runtime': {'type': 'podman-quadlet'},
+  'container': {
+    'file': 'app_postgres.container',
+    'dropins_dir': 'app_postgres.container.d',
+    'profiles_dir': 'app_postgres.profiles.d',
+  },
+  'schemas': {'configure': 'configure.schema.json', 'init': 'init.schema.json'},
+};
+
+io.File _schemaFile() {
+  for (final path in [
+    'packages/infra/schemas/service-manifest.schema.json',
+    'schemas/service-manifest.schema.json',
+  ]) {
+    final file = io.File(path);
+    if (file.existsSync()) return file;
+  }
+  throw StateError('Could not find service-manifest.schema.json.');
 }

@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://artificery.dev/dew/schemas/infra/service-manifest.schema.json",
+  "title": "Dew Infrastructure Service Manifest",
+  "description": "Schema for .project/infrastructure/services/<service-id>/manifest.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["service", "container", "schemas"],
+  "properties": {
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "unit", "container_name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_.-]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/]+\\.service$"
+        },
+        "container_name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["podman-quadlet"],
+          "default": "podman-quadlet"
+        }
+      }
+    },
+    "container": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "dropins_dir", "profiles_dir"],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/].*\\.container$"
+        },
+        "dropins_dir": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profiles_dir": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configure", "init"],
+      "properties": {
+        "configure": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/].*\\.json$"
+        },
+        "init": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/].*\\.json$"
+        }
+      }
+    }
+  }
+}

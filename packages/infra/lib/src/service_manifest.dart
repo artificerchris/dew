@@ -1,5 +1,5 @@
 import 'package:path/path.dart' as p;
-import 'package:toml/toml.dart';
+import 'package:yaml/yaml.dart';
 
 /// Supported infrastructure runtime backends.
 ///
@@ -26,7 +26,7 @@ enum InfraRuntimeKind {
   }
 }
 
-/// Infrastructure service metadata loaded from `metadata.toml`.
+/// Infrastructure service metadata loaded from `manifest.yaml`.
 class InfraServiceManifest {
   const InfraServiceManifest({
     required this.id,
@@ -35,7 +35,7 @@ class InfraServiceManifest {
     required this.containerName,
     required this.runtime,
     required this.serviceDir,
-    required this.metadataPath,
+    required this.manifestPath,
     required this.containerFile,
     this.dropinsDir,
     this.profilesDir,
@@ -61,8 +61,8 @@ class InfraServiceManifest {
   /// Absolute path to the service directory.
   final String serviceDir;
 
-  /// Absolute path to `metadata.toml`.
-  final String metadataPath;
+  /// Absolute path to `manifest.yaml`.
+  final String manifestPath;
 
   /// Relative path to the primary Quadlet/container definition.
   final String containerFile;
@@ -111,13 +111,13 @@ class InfraServiceManifest {
   String get expectedUnit =>
       '${p.basenameWithoutExtension(containerFile)}.service';
 
-  /// Decodes [contents] from TOML.
+  /// Decodes [contents] from YAML.
   factory InfraServiceManifest.parse({
     required String contents,
     required String serviceDir,
-    required String metadataPath,
+    required String manifestPath,
   }) {
-    final map = TomlDocument.parse(contents).toMap();
+    final map = _asMap(loadYaml(contents));
     final service = _section(map, 'service');
     final container = _section(map, 'container');
     final schemas = _optionalSection(map, 'schemas');
@@ -132,7 +132,7 @@ class InfraServiceManifest {
         runtimeSection == null ? null : _optionalString(runtimeSection, 'type'),
       ),
       serviceDir: serviceDir,
-      metadataPath: metadataPath,
+      manifestPath: manifestPath,
       containerFile: _requiredString(container, 'file'),
       dropinsDir: _optionalString(container, 'dropins_dir'),
       profilesDir: _optionalString(container, 'profiles_dir'),
@@ -150,7 +150,7 @@ class InfraServiceManifest {
     'unit': unit,
     'container_name': containerName,
     'runtime': runtime.id,
-    'metadata': metadataPath,
+    'manifest': manifestPath,
     'container_file': containerFilePath,
     'dropins_dir': dropinsDirPath,
     'profiles_dir': profilesDirPath,
@@ -165,12 +165,29 @@ class InfraServiceManifest {
       : p.normalize(p.join(serviceDir, value));
 }
 
+Map<String, dynamic> _asMap(dynamic value) {
+  if (value is YamlMap) {
+    return value.map((key, value) => MapEntry('$key', _asYamlValue(value)));
+  }
+  if (value is Map) {
+    return value.map((key, value) => MapEntry('$key', _asYamlValue(value)));
+  }
+  throw const FormatException('manifest.yaml must contain a YAML object.');
+}
+
+dynamic _asYamlValue(dynamic value) {
+  if (value is YamlMap || value is Map) return _asMap(value);
+  if (value is YamlList) return value.map(_asYamlValue).toList();
+  if (value is List) return value.map(_asYamlValue).toList();
+  return value;
+}
+
 Map<String, dynamic> _section(Map<String, dynamic> map, String key) {
   final value = map[key];
   if (value is Map) {
     return value.map((key, value) => MapEntry('$key', value));
   }
-  throw FormatException('metadata.toml is missing [$key].');
+  throw FormatException('manifest.yaml is missing "$key".');
 }
 
 Map<String, dynamic>? _optionalSection(Map<String, dynamic> map, String key) {
@@ -179,13 +196,13 @@ Map<String, dynamic>? _optionalSection(Map<String, dynamic> map, String key) {
   if (value is Map) {
     return value.map((key, value) => MapEntry('$key', value));
   }
-  throw FormatException('metadata.toml section [$key] must be a table.');
+  throw FormatException('manifest.yaml field "$key" must be an object.');
 }
 
 String _requiredString(Map<String, dynamic> map, String key) {
   final value = _optionalString(map, key);
   if (value == null || value.isEmpty) {
-    throw FormatException('metadata.toml is missing required string "$key".');
+    throw FormatException('manifest.yaml is missing required string "$key".');
   }
   return value;
 }
@@ -194,5 +211,5 @@ String? _optionalString(Map<String, dynamic> map, String key) {
   final value = map[key];
   if (value == null) return null;
   if (value is String) return value;
-  throw FormatException('metadata.toml field "$key" must be a string.');
+  throw FormatException('manifest.yaml field "$key" must be a string.');
 }

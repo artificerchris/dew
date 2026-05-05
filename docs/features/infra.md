@@ -14,7 +14,7 @@ workflows.
 .project/infrastructure/
 └── services/
     └── postgres/
-        ├── metadata.toml
+        ├── manifest.yaml
         ├── app_postgres.container
         ├── app_postgres.container.d/
         ├── app_postgres.profiles.d/
@@ -25,25 +25,28 @@ workflows.
 
 ## Manifest
 
-```toml
-[service]
-id = "postgres"
-name = "PostgreSQL"
-unit = "app_postgres.service"
-container_name = "app_postgres"
+```yaml
+service:
+  id: postgres
+  name: PostgreSQL
+  unit: app_postgres.service
+  container_name: app_postgres
 
-[runtime]
-type = "podman-quadlet"
+runtime:
+  type: podman-quadlet
 
-[container]
-file = "app_postgres.container"
-dropins_dir = "app_postgres.container.d"
-profiles_dir = "app_postgres.profiles.d"
+container:
+  file: app_postgres.container
+  dropins_dir: app_postgres.container.d
+  profiles_dir: app_postgres.profiles.d
 
-[schemas]
-configure = "configure.schema.json"
-init = "init.schema.json"
+schemas:
+  configure: configure.schema.json
+  init: init.schema.json
 ```
+
+The package-level schema for this file is
+`packages/infra/schemas/service-manifest.schema.json`.
 
 ## Commands
 

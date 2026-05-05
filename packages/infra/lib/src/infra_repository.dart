@@ -23,7 +23,7 @@ class InfraRepository {
   /// Absolute path to the service directory root.
   String get servicesDir => p.join(infraDir, 'services');
 
-  /// Finds all service manifests below `services/*/metadata.toml`.
+  /// Finds all service manifests below `services/*/manifest.yaml`.
   Future<List<InfraServiceManifest>> list() async {
     final root = fs.directory(servicesDir);
     if (!await root.exists()) return const [];
@@ -31,10 +31,10 @@ class InfraRepository {
     final manifests = <InfraServiceManifest>[];
     await for (final entity in root.list()) {
       if (entity is! Directory) continue;
-      final metadata = fs.file(p.join(entity.path, 'metadata.toml'));
-      if (!await metadata.exists()) continue;
+      final manifest = fs.file(p.join(entity.path, 'manifest.yaml'));
+      if (!await manifest.exists()) continue;
       manifests.add(
-        await loadFromMetadataPath(metadata.path, serviceDir: entity.path),
+        await loadFromManifestPath(manifest.path, serviceDir: entity.path),
       );
     }
     manifests.sort((a, b) => a.id.compareTo(b.id));
@@ -52,25 +52,25 @@ class InfraRepository {
 
   /// Loads a single service by command-line [id], returning null if absent.
   Future<InfraServiceManifest?> find(String id) async {
-    final metadataPath = p.join(servicesDir, id, 'metadata.toml');
-    final file = fs.file(metadataPath);
+    final manifestPath = p.join(servicesDir, id, 'manifest.yaml');
+    final file = fs.file(manifestPath);
     if (!await file.exists()) return null;
-    return loadFromMetadataPath(
-      metadataPath,
-      serviceDir: p.dirname(metadataPath),
+    return loadFromManifestPath(
+      manifestPath,
+      serviceDir: p.dirname(manifestPath),
     );
   }
 
-  /// Parses the manifest at [metadataPath].
-  Future<InfraServiceManifest> loadFromMetadataPath(
-    String metadataPath, {
+  /// Parses the manifest at [manifestPath].
+  Future<InfraServiceManifest> loadFromManifestPath(
+    String manifestPath, {
     required String serviceDir,
   }) async {
-    final file = fs.file(metadataPath);
+    final file = fs.file(manifestPath);
     return InfraServiceManifest.parse(
       contents: await file.readAsString(),
       serviceDir: p.normalize(serviceDir),
-      metadataPath: p.normalize(metadataPath),
+      manifestPath: p.normalize(manifestPath),
     );
   }
 }
@@ -126,16 +126,16 @@ class InfraValidator {
     final dirId = p.basename(manifest.serviceDir);
     if (manifest.id != dirId) {
       issue(
-        manifest.metadataPath,
+        manifest.manifestPath,
         'service.id "${manifest.id}" must match directory "$dirId".',
       );
     }
     if (!manifest.unit.endsWith('.service')) {
-      issue(manifest.metadataPath, 'service.unit must end with .service.');
+      issue(manifest.manifestPath, 'service.unit must end with .service.');
     }
     if (manifest.unit != manifest.expectedUnit) {
       issue(
-        manifest.metadataPath,
+        manifest.manifestPath,
         'service.unit "${manifest.unit}" must match container file unit '
         '"${manifest.expectedUnit}".',
       );
@@ -211,7 +211,7 @@ class InfraValidator {
       issues.add(
         InfraValidationIssue(
           serviceId: manifest.id,
-          path: manifest.metadataPath,
+          path: manifest.manifestPath,
           message: 'Missing $label path.',
         ),
       );
