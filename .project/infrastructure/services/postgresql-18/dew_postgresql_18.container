@@ -1,0 +1,24 @@
+[Unit]
+Description=Dew sample PostgreSQL 18 database
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=docker.io/library/postgres:18
+ContainerName=dew_postgresql_18
+Environment=POSTGRES_DB=dew
+Environment=POSTGRES_USER=dew
+Environment=POSTGRES_PASSWORD=dew_dev_password
+PublishPort=127.0.0.1:5432:5432
+Volume=dew_postgresql_18_data:/var/lib/postgresql/data:Z
+HealthCmd=pg_isready -U dew -d dew
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=5
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

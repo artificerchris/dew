@@ -245,7 +245,7 @@ class PodmanQuadletRuntime implements ContainerRuntime {
         () => fs.directory(targetDropins).create(recursive: true),
       );
       await for (final entity in fs.directory(dropinsPath).list()) {
-        if (entity is! File) continue;
+        if (entity is! File || p.extension(entity.path) != '.conf') continue;
         await _link(
           actions,
           dryRun,

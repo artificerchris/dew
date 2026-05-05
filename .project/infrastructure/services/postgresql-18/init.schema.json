@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://artificery.dev/dew/samples/postgresql-18/init.schema.json",
+  "title": "PostgreSQL 18 Sample Initialization",
+  "description": "Optional initialization notes for the sample PostgreSQL 18 service.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "create_database": {
+      "type": "boolean",
+      "default": true
+    },
+    "seed_sample_data": {
+      "type": "boolean",
+      "default": false
+    },
+    "notes": {
+      "type": "string",
+      "default": ""
+    }
+  }
+}

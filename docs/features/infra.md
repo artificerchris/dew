@@ -73,3 +73,16 @@ user systemd path or `--scope system` for `/etc/containers/systemd`.
 
 `dew infra up` installs missing Quadlet files, reloads systemd, then starts the
 unit.
+
+## Samples
+
+The Dew repository includes sample service bringups under
+`.project/infrastructure/services/`.
+
+`postgresql-18` brings up a local PostgreSQL 18 container through Podman
+Quadlets:
+
+```bash
+dew infra validate postgresql-18
+dew infra up postgresql-18
+```

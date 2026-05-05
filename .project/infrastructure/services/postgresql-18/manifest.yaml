@@ -1,0 +1,17 @@
+service:
+  id: postgresql-18
+  name: PostgreSQL 18
+  unit: dew_postgresql_18.service
+  container_name: dew_postgresql_18
+
+runtime:
+  type: podman-quadlet
+
+container:
+  file: dew_postgresql_18.container
+  dropins_dir: dew_postgresql_18.container.d
+  profiles_dir: dew_postgresql_18.profiles.d
+
+schemas:
+  configure: configure.schema.json
+  init: init.schema.json
