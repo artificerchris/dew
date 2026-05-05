@@ -1,9 +1,12 @@
 name: dew
 description: Command-line interface for the Dew project management tool.
-version: 0.4.0
+version: 0.4.1
 repository: https://github.com/artificerchris/dew
 issue_tracker: https://github.com/artificerchris/dew/issues
 resolution: workspace
+
+executables:
+  dew: dew
 
 environment:
   sdk: ^3.12.0

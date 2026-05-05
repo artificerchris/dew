@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-05-05
+
+### Fixed in 0.4.1
+
+- Published a CLI patch release that restores the `dew` executable metadata for
+  `dart pub global activate dew`.
+
 ## [0.4.0] - 2026-05-05
 
 ### Added in 0.4.0
@@ -109,6 +116,7 @@ Full set of kanban subcommands, each also registered as an MCP tool automaticall
 - `ProjectDirs` with injectable filesystem abstraction (`package:file`) for
   testable path resolution.
 
-[Unreleased]: https://github.com/artificerchris/dew/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/artificerchris/dew/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/artificerchris/dew/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/artificerchris/dew/compare/v0.3.0...v0.4.0
 [0.1.0]: https://github.com/artificerchris/dew/releases/tag/v0.1.0

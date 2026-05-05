@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1 — 2026-05-05
+
+Patch release.
+
+- Restored the pubspec `executables` declaration so
+  `dart pub global activate dew` installs the `dew` launcher.
+
 ## 0.4.0 — 2026-05-05
 
 Infra release.
