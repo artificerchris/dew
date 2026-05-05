@@ -38,7 +38,7 @@ The TUI auto-refreshes when ticket files change on disk, so it stays in sync whe
 dart pub global activate dew
 ```
 
-Requires Dart SDK ^3.11.4.
+Requires Dart SDK ^3.12.0.
 
 ## Quick start
 

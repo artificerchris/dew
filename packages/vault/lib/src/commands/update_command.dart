@@ -55,8 +55,8 @@ class UpdateCommand extends DewCommand with DewToolCommand {
     final context = await ProjectContext.find(fs: _fs);
     final config = context.config.vault;
     final store = VaultStore(
-      storageDir: resolveProjectPath(context.root, config.storageDir),
-      passwordFilePath: resolveProjectPath(context.root, config.passwordFile),
+      storageDir: context.resolveConfigPath(config.storageDir),
+      passwordFilePath: context.resolveConfigPath(config.passwordFile),
       fs: context.fs,
     );
 

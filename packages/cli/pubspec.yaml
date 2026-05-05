@@ -6,7 +6,7 @@ issue_tracker: https://github.com/artificerchris/dew/issues
 resolution: workspace
 
 environment:
-  sdk: ^3.11.4
+  sdk: ^3.12.0
 
 dependencies:
   args: ^2.7.0

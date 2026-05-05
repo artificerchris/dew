@@ -48,19 +48,17 @@ void main() {
       final tools = registry.mcpTools.map((t) => t.name).toSet();
       expect(
         tools,
-        containsAll(
-          {
-            'vault_init',
-            'vault_set_secret',
-            'vault_get_secret',
-            'vault_update_secret',
-            'vault_rename_secret',
-            'vault_rotate_secret',
-            'vault_generate_secret',
-            'vault_list_secrets',
-            'vault_delete_secret',
-          },
-        ),
+        containsAll({
+          'vault_init',
+          'vault_set_secret',
+          'vault_get_secret',
+          'vault_update_secret',
+          'vault_rename_secret',
+          'vault_rotate_secret',
+          'vault_generate_secret',
+          'vault_list_secrets',
+          'vault_delete_secret',
+        }),
       );
     });
   });
@@ -151,11 +149,17 @@ void main() {
       );
       expect(initResult['message'], 'Vault initialised.');
       expect(initResult['initialized'], isTrue);
-      expect(initResult['password_file'], '/.project/secrets/dew.vault.password');
+      expect(
+        initResult['password_file'],
+        '/.project/secrets/dew.vault.password',
+      );
       expect(initResult['storage_dir'], '/.project/vault');
 
       expect(await fs.directory('/.project/vault').exists(), isTrue);
-      expect(await fs.file('/.project/secrets/dew.vault.password').exists(), isTrue);
+      expect(
+        await fs.file('/.project/secrets/dew.vault.password').exists(),
+        isTrue,
+      );
     });
 
     test('init command accepts custom password and storage paths', () async {
@@ -168,20 +172,27 @@ void main() {
       );
       expect(
         customInit['password_file'],
-        '/.custom/secrets/custom.vault.password',
+        '/.project/.custom/secrets/custom.vault.password',
+      );
+      expect(customInit['storage_dir'], '/.project/.custom/vault-store');
+      expect(
+        await fs.directory('/.project/.custom/vault-store').exists(),
+        isTrue,
       );
       expect(
-        customInit['storage_dir'],
-        '/.custom/vault-store',
+        await fs
+            .file('/.project/.custom/secrets/custom.vault.password')
+            .exists(),
+        isTrue,
       );
-      expect(await fs.directory('/.custom/vault-store').exists(), isTrue);
-      expect(await fs.file('/.custom/secrets/custom.vault.password').exists(), isTrue);
     });
 
     test('set command accepts metadata from file', () async {
-      fs.file('/meta.json').writeAsStringSync(
-        '{"rotation":{"generator":"postgres_password","length":16},"notes":"from-file"}',
-      );
+      fs
+          .file('/meta.json')
+          .writeAsStringSync(
+            '{"rotation":{"generator":"postgres_password","length":16},"notes":"from-file"}',
+          );
       await tools['vault_set_secret']!.handler({
         'name': 'META_FILE_SECRET',
         'file': '/seed.txt',
@@ -242,9 +253,11 @@ void main() {
     });
 
     test('update command accepts metadata file', () async {
-      fs.file('/meta-update.json').writeAsStringSync(
-        '{"rotation":{"generator":"postgres_password","length":24},"notes":"file-metadata"}',
-      );
+      fs
+          .file('/meta-update.json')
+          .writeAsStringSync(
+            '{"rotation":{"generator":"postgres_password","length":24},"notes":"file-metadata"}',
+          );
       await tools['vault_set_secret']!.handler({
         'name': 'META_UPDATE_SECRET',
         'file': '/seed.txt',
@@ -289,7 +302,10 @@ void main() {
       expect(listResult['secrets'], isNot(contains('LEGACY_KEY')));
 
       await expectLater(
-        tools['vault_get_secret']!.handler({'name': 'LEGACY_KEY', 'format': 'json'}),
+        tools['vault_get_secret']!.handler({
+          'name': 'LEGACY_KEY',
+          'format': 'json',
+        }),
         throwsA(isA<ArgumentError>()),
       );
 
@@ -320,51 +336,54 @@ void main() {
       );
     });
 
-    test('rotate command uses rotation metadata and can rotate vault password', () async {
-      await tools['vault_set_secret']!.handler({
-        'name': 'service_db_password',
-        'file': '/seed.txt',
-        'metadata':
-            '{"rotation":{"generator":"postgres_password","length":12}}',
-      });
-      await tools['vault_set_secret']!.handler({
-        'name': 'service_api_key',
-        'file': '/new-seed.txt',
-        'metadata':
-            '{"rotation":{"generator":"postgres_password","length":12}}',
-      });
-
-      final before = _decodeToolJson(
-        await tools['vault_get_secret']!.handler({
+    test(
+      'rotate command uses rotation metadata and can rotate vault password',
+      () async {
+        await tools['vault_set_secret']!.handler({
           'name': 'service_db_password',
-          'format': 'json',
-        }),
-      );
-      expect(before['value'], 'super-secret');
+          'file': '/seed.txt',
+          'metadata':
+              '{"rotation":{"generator":"postgres_password","length":12}}',
+        });
+        await tools['vault_set_secret']!.handler({
+          'name': 'service_api_key',
+          'file': '/new-seed.txt',
+          'metadata':
+              '{"rotation":{"generator":"postgres_password","length":12}}',
+        });
 
-      final secretRotated = _decodeToolJson(
-        await tools['vault_rotate_secret']!.handler({
-          'name': 'service_db_password',
-          'format': 'json',
-        }),
-      );
-      expect(secretRotated['scope'], 'secret');
-      expect(secretRotated['name'], 'service_db_password');
+        final before = _decodeToolJson(
+          await tools['vault_get_secret']!.handler({
+            'name': 'service_db_password',
+            'format': 'json',
+          }),
+        );
+        expect(before['value'], 'super-secret');
 
-      final after = _decodeToolJson(
-        await tools['vault_get_secret']!.handler({
-          'name': 'service_db_password',
-          'format': 'json',
-        }),
-      );
-      expect(after['value'], isNot('super-secret'));
+        final secretRotated = _decodeToolJson(
+          await tools['vault_rotate_secret']!.handler({
+            'name': 'service_db_password',
+            'format': 'json',
+          }),
+        );
+        expect(secretRotated['scope'], 'secret');
+        expect(secretRotated['name'], 'service_db_password');
 
-      final allRotated = _decodeToolJson(
-        await tools['vault_rotate_secret']!.handler({'format': 'json'}),
-      );
-      expect(allRotated['scope'], 'vault');
-      expect(allRotated['rotated_count'], 2);
-    });
+        final after = _decodeToolJson(
+          await tools['vault_get_secret']!.handler({
+            'name': 'service_db_password',
+            'format': 'json',
+          }),
+        );
+        expect(after['value'], isNot('super-secret'));
+
+        final allRotated = _decodeToolJson(
+          await tools['vault_rotate_secret']!.handler({'format': 'json'}),
+        );
+        expect(allRotated['scope'], 'vault');
+        expect(allRotated['rotated_count'], 2);
+      },
+    );
   });
 
   group('vault crypto helpers', () {
@@ -373,10 +392,14 @@ void main() {
       const value = 'very-sensitive';
       final encoded = VaultCrypto.encryptToEnvelope(value, password: password);
       expect(encoded['version'], 1);
-      final decoded = VaultCrypto.decryptFromEnvelope(encoded, password: password);
+      final decoded = VaultCrypto.decryptFromEnvelope(
+        encoded,
+        password: password,
+      );
       expect(decoded, value);
       expect(
-        () => VaultCrypto.decryptFromEnvelope(encoded, password: 'bad-password'),
+        () =>
+            VaultCrypto.decryptFromEnvelope(encoded, password: 'bad-password'),
         throwsA(isA<ArgumentError>()),
       );
     });

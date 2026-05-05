@@ -46,8 +46,8 @@ class VaultInitCommand extends DewCommand with DewToolCommand {
 
     final context = await ProjectContext.find(fs: _fs);
     final store = VaultStore(
-      storageDir: resolveProjectPath(context.root, storageDir),
-      passwordFilePath: resolveProjectPath(context.root, passwordFile),
+      storageDir: context.resolveConfigPath(storageDir),
+      passwordFilePath: context.resolveConfigPath(passwordFile),
       fs: context.fs,
     );
     await store.initialize();

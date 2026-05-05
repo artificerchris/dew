@@ -10,6 +10,9 @@ your-project/
     └── dew.yaml
 ```
 
+Path-like values in `dew.yaml` are resolved relative to `.project/dew.yaml`
+unless they are absolute (for example, paths under `dew.vault`).
+
 ## Full Schema
 
 ```yaml

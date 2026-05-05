@@ -4,7 +4,7 @@ Thank you for your interest in contributing! This guide covers everything you ne
 
 ## Prerequisites
 
-- **Dart SDK ^3.11.4** — verify with `dart --version`
+- **Dart SDK ^3.12.0** — verify with `dart --version`
 - **Melos** (optional, for workspace scripts) — `dart pub global activate melos`
 
 ## Clone & setup

@@ -72,5 +72,25 @@ dew:
       final ctx = await ProjectContext.find(fs: fs, from: fs.directory('/sub'));
       expect(ctx.root, '/');
     });
+
+    test('resolveConfigPath resolves paths relative to .project/dew.yaml', () async {
+      final fs = MemoryFileSystem();
+      fs.directory('/foo/.project').createSync(recursive: true);
+      fs.file('/foo/.project/dew.yaml').writeAsStringSync(configYaml);
+
+      final ctx = await ProjectContext.find(fs: fs, from: fs.directory('/foo/.project/child'));
+      expect(
+        ctx.resolveConfigPath('vault'),
+        '/foo/.project/vault',
+      );
+      expect(
+        ctx.resolveConfigPath('.project/vault'),
+        '/foo/.project/vault',
+      );
+      expect(
+        ctx.resolveConfigPath('/tmp/abs'),
+        '/tmp/abs',
+      );
+    });
   });
 }
