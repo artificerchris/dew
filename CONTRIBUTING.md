@@ -5,6 +5,7 @@ Thank you for your interest in contributing! This guide covers everything you ne
 ## Prerequisites
 
 - **Dart SDK ^3.12.0** — verify with `dart --version`
+  - `dew run` requires a Dart SDK with native-assets support.
 - **Melos** (optional, for workspace scripts) — `dart pub global activate melos`
 
 ## Clone & setup

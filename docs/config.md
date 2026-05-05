@@ -11,7 +11,8 @@ your-project/
 ```
 
 Path-like values in `dew.yaml` are resolved relative to `.project/dew.yaml`
-unless they are absolute (for example, paths under `dew.vault`).
+unless they are absolute (for example, paths under `dew.vault` and
+`dew.plugins`).
 
 ## Full Schema
 
@@ -46,6 +47,9 @@ dew:
       - id: "done"
         name: "Done"
         color: "green"
+
+  plugins:
+    directory: "/home/me/.config/dew/plugins"
 ```
 
 ## Reference
@@ -64,6 +68,12 @@ dew:
 | `prefix`       | string | Short uppercase prefix prepended to ticket IDs (e.g. `PROJ-1`).                                              |
 | `ticket_types` | list   | The ticket types available on the board. Each entry requires an `id` and a `name`.                           |
 | `columns`      | list   | The columns on the board, in order from left to right. Each entry requires an `id`, a `name`, and a `color`. |
+
+### `dew.plugins`
+
+| Field       | Type   | Default                                                  | Description                                           |
+| ----------- | ------ | -------------------------------------------------------- | ----------------------------------------------------- |
+| `directory` | string | `${XDG_CONFIG_HOME}/dew/plugins` (or `~/.config/dew/plugins`) | Absolute path of the directory that contains playbooks. |
 
 #### Column colors
 

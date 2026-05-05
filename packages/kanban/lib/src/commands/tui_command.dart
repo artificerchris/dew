@@ -408,10 +408,13 @@ class TuiCommand extends DewCommand {
                   prompt = null;
                   statusMsg = '';
                 case ControlCharacter.arrowLeft:
-                  if (p.relationIdx > 0) p.relationIdx--;
+                  if (p.relationIdx > 0) {
+                    p.relationIdx--;
+                  }
                 case ControlCharacter.arrowRight:
-                  if (p.relationIdx < _linkRelations.length - 1)
+                  if (p.relationIdx < _linkRelations.length - 1) {
                     p.relationIdx++;
+                  }
                 case ControlCharacter.enter:
                   try {
                     await store.linkTickets(
@@ -444,12 +447,14 @@ class TuiCommand extends DewCommand {
                     p.input = p.input.substring(0, p.input.length - 1);
                   }
                 case ControlCharacter.arrowLeft:
-                  if (p.kind == _PromptKind.newTitle && p.typeIdx > 0)
+                  if (p.kind == _PromptKind.newTitle && p.typeIdx > 0) {
                     p.typeIdx--;
+                  }
                 case ControlCharacter.arrowRight:
                   if (p.kind == _PromptKind.newTitle &&
-                      p.typeIdx < config.ticketTypes.length - 1)
+                      p.typeIdx < config.ticketTypes.length - 1) {
                     p.typeIdx++;
+                  }
                 case ControlCharacter.enter:
                   final trimmed = p.input.trim();
                   if (p.kind == _PromptKind.linkId) {
@@ -711,9 +716,10 @@ class TuiCommand extends DewCommand {
                     if (i < allCols.length - 1) es.column = allCols[i + 1];
                   case _EditorField.labels:
                     if (es.itemCursor < es.labels.length - 1) es.itemCursor++;
-                  case _EditorField.milestones:
-                    if (es.itemCursor < es.milestones.length - 1)
+                case _EditorField.milestones:
+                    if (es.itemCursor < es.milestones.length - 1) {
                       es.itemCursor++;
+                    }
                   default:
                     break;
                 }
@@ -1386,10 +1392,12 @@ class TuiCommand extends DewCommand {
     kv('Type', ticket.type);
     kv('Column', ticket.column);
     kv('Created', _fmtDate(ticket.created));
-    if (ticket.milestones.isNotEmpty)
+    if (ticket.milestones.isNotEmpty) {
       kv('Milestones', ticket.milestones.join(', '));
-    if (ticket.labels.isNotEmpty)
+    }
+    if (ticket.labels.isNotEmpty) {
       kv('Labels', ticket.labels.map((l) => '#$l').join('  '));
+    }
     if (ticket.links.isNotEmpty) {
       for (final link in ticket.links) {
         kv(link.type, link.targetId);

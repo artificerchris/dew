@@ -12,6 +12,7 @@ workspace:
   - packages/kanban
   - packages/mcp
   - packages/vault
+  - packages/runner
 
 dev_dependencies:
   file: ^7.0.1
@@ -38,16 +39,22 @@ melos:
         NOTE: 'mcp serve' must be run via the compiled binary (see compile
         script) because melos pollutes stdout, which breaks the stdio MCP
         transport.
-      run: dart run packages/cli/bin/dew.dart
+      run: cd packages/cli && dart run bin/dew.dart
     compile:
       description: >-
         Compile the Dew CLI to a native binary at .project/toolchain/bin/dew
         (.project/toolchain/bin/dew.exe on Windows). Use the compiled binary to
         run 'dew mcp serve' from your MCP client config — this keeps stdout
         clean for the JSON-RPC channel.
-      run: dart compile exe packages/cli/bin/dew.dart -o .project/toolchain/bin/dew
+      run: |
+        dart build cli --target=packages/cli/bin/dew.dart --output=.project/toolchain/dew
+        mkdir -p .project/toolchain/bin
+        ln -sf ../dew/bundle/bin/dew .project/toolchain/bin/dew
     install:local:
       description: >-
         Compile and install the Dew CLI to ~/.local/bin/dew so it is available
         globally on your PATH. Requires ~/.local/bin to be on PATH.
-      run: dart compile exe packages/cli/bin/dew.dart -o ~/.local/bin/dew
+      run: |
+        dart build cli --target=packages/cli/bin/dew.dart --output=$HOME/.local/share/dew
+        mkdir -p $HOME/.local/bin
+        ln -sf $HOME/.local/share/dew/bundle/bin/dew $HOME/.local/bin/dew

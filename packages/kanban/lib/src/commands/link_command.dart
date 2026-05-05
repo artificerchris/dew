@@ -44,8 +44,9 @@ class LinkCommand extends DewCommand with DewToolCommand {
     final targetId = '${args['target']}'.toUpperCase();
     final type = '${args['type']}';
 
-    if (id == targetId)
+    if (id == targetId) {
       throw ArgumentError('A ticket cannot be linked to itself.');
+    }
 
     final context = await ProjectContext.find(fs: _fs);
     final store = TicketStore(

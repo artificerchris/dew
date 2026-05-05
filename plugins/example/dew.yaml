@@ -1,0 +1,7 @@
+name: example
+version: 0.1.0
+description: >
+  Example Dew plugin for quick experimentation with JavaScript playbooks.
+entrypoint: src/main.js
+runtime:
+  engine: quickjs

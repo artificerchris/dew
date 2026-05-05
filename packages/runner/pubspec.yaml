@@ -1,5 +1,6 @@
-name: dew
-description: Command-line interface for the Dew project management tool.
+name: dew_runner
+description: JavaScript playbook execution package for the Dew CLI.
+publish_to: none
 version: 0.1.0
 repository: https://github.com/artificerchris/dew
 issue_tracker: https://github.com/artificerchris/dew/issues
@@ -9,12 +10,14 @@ environment:
   sdk: ^3.12.0
 
 dependencies:
-  args: ^2.7.0
   dew_core: ^0.1.0
-  dew_kanban: ^0.1.0
-  dew_runner: ^0.1.0
-  dew_vault: ^0.3.0
-  dew_mcp: ^0.1.0
+  file: ^7.0.1
+  path: ^1.9.0
+  quickjs:
+    git:
+      url: https://github.com/lindeer/quickjs-dart.git
+      path: ./
+  yaml: ^3.1.0
 
 dev_dependencies:
   lints: ^6.0.0

@@ -10,6 +10,7 @@ Welcome to the documentation for the Dew project management tool!
 
 - [Kanban Board](./features/kanban.md) — Visualize and manage tasks in a column-based workflow
 - [MCP Server](./features/mcp.md) — AI agent integration via the Model Context Protocol
+- [Runner](./features/runner.md) — Execute local JavaScript playbooks from `dew run`
 
 ## Package Architecture
 
@@ -20,6 +21,7 @@ Dew is structured as a Dart workspace with the following packages:
 | `packages/cli`    | The `dew` command-line tool. Wires all packages together at startup.                         |
 | `packages/core`   | Shared foundation: `DewCommand`, `DewToolCommand` mixin, `CommandRegistry`, and `DewConfig`. |
 | `packages/kanban` | Kanban board logic. Each command automatically registers itself as an MCP tool.              |
+| `packages/runner` | Runs JavaScript playbooks via QuickJS from `dew run` using plugin discovery config.              |
 | `packages/mcp`    | The MCP server. Collects tools from `CommandRegistry` and serves them over stdio.            |
 
 ### How commands become MCP tools

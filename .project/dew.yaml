@@ -1,27 +1,27 @@
 dew:
-  mcp:
-    host: "localhost"
-    port: 8080
+  plugins:
+    directory: ../plugins
+
   kanban:
-    prefix: "DEW"
+    prefix: DEW
     ticket_types:
-      - id: "epic"
-        name: "Epic"
-      - id: "story"
-        name: "Story"
-      - id: "task"
-        name: "Task"
-      - id: "bug"
-        name: "Bug"
-      - id: "spike"
-        name: "Spike"
+      - id: epic
+        name: Epic
+      - id: story
+        name: Story
+      - id: task
+        name: Task
+      - id: bug
+        name: Bug
+      - id: spike
+        name: Spike
     columns:
-      - id: "backlog"
-        name: "Backlog"
-        color: "blue"
-      - id: "doing"
-        name: "Doing"
-        color: "yellow"
-      - id: "done"
-        name: "Done"
-        color: "green"
+      - id: backlog
+        name: Backlog
+        color: blue
+      - id: doing
+        name: Doing
+        color: yellow
+      - id: done
+        name: Done
+        color: green

@@ -3,6 +3,7 @@ import 'package:dew_core/dew_core.dart';
 import 'package:dew_kanban/dew_kanban.dart' as kanban;
 import 'package:dew_mcp/dew_mcp.dart' as mcp;
 import 'package:dew_vault/dew_vault.dart' as vault;
+import 'package:dew_runner/dew_runner.dart' as runner_pkg;
 import 'package:test/test.dart';
 
 /// Builds the same CommandRunner as bin/dew.dart without actually running it.
@@ -11,6 +12,7 @@ CommandRunner<void> buildRunner() {
   kanban.registerCommands(commandRegistry);
   vault.registerCommands(commandRegistry);
   mcp.registerCommands(commandRegistry);
+  runner_pkg.registerCommands(commandRegistry);
 
   final runner = CommandRunner<void>('dew', 'A project management tool.');
   runner.addCommand(InitCommand(commandRegistry.initHooks));
@@ -26,9 +28,12 @@ void main() {
       expect(buildRunner, returnsNormally);
     });
 
-    test('has kanban, vault, init, and mcp commands registered', () {
+    test('has core and plugin commands registered', () {
       final runner = buildRunner();
-      expect(runner.commands.keys, containsAll(['kanban', 'vault', 'init', 'mcp']));
+      expect(
+        runner.commands.keys,
+        containsAll(['kanban', 'vault', 'init', 'mcp', 'run', 'plugins']),
+      );
     });
 
     test('--help flag does not throw', () async {

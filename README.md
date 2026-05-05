@@ -18,6 +18,14 @@ stats   board   config   tui
 
 Tickets are stored as `.project/kanban/<column>/<ID>.md` files. Labels, milestones, typed bidirectional links, and inline comments are all first-class citizens. See the [Kanban documentation](./docs/features/kanban.md) for the full command reference.
 
+### Runner
+
+`dew run <playbook>` executes JavaScript playbooks through an embedded QuickJS runtime.
+Use this for repeatable workflows, automations, and custom playbooks stored under the
+configured plugin directory.
+
+`dew plugins list` prints available playbooks discovered from that directory.
+
 ### Interactive TUI
 
 `dew kanban tui` opens a full Trello-style terminal board with three modes:
@@ -39,6 +47,8 @@ dart pub global activate dew
 ```
 
 Requires Dart SDK ^3.12.0.
+
+`dew run` with QuickJS requires a Dart SDK that supports Dart native assets.
 
 ## Quick start
 
@@ -62,4 +72,5 @@ Dew reads `.project/dew.yaml` for board columns, ticket types, ID prefix, and MC
 - [Full documentation index](./docs/index.md)
 - [Kanban board](./docs/features/kanban.md) — CLI commands, TUI keybindings, ticket format
 - [MCP server](./docs/features/mcp.md) — AI agent integration
+- [Runner](./docs/features/runner.md) — JavaScript playbook execution with `dew run`
 - [Configuration reference](./docs/config.md)
