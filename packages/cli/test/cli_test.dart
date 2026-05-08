@@ -15,6 +15,7 @@ CommandRunner<void> buildRunner() {
   mcp.registerCommands(commandRegistry);
 
   final runner = CommandRunner<void>('dew', 'A project management tool.');
+  runner.addCommand(CompletionCommand());
   runner.addCommand(InitCommand(commandRegistry.initHooks));
   for (final command in commandRegistry.commands) {
     runner.addCommand(command);
@@ -32,7 +33,7 @@ void main() {
       final runner = buildRunner();
       expect(
         runner.commands.keys,
-        containsAll(['infra', 'kanban', 'vault', 'init', 'mcp']),
+        containsAll(['infra', 'kanban', 'vault', 'init', 'mcp', 'completion']),
       );
     });
 
@@ -57,6 +58,16 @@ void main() {
     test('mcp subcommand --help does not throw', () async {
       final runner = buildRunner();
       await expectLater(runner.run(['help', 'mcp']), completes);
+    });
+
+    test('completion subcommand --help does not throw', () async {
+      final runner = buildRunner();
+      await expectLater(runner.run(['help', 'completion']), completes);
+    });
+
+    test('completion scaffolds subcommand --help does not throw', () async {
+      final runner = buildRunner();
+      await expectLater(runner.run(['help', 'completion', 'scaffolds']), completes);
     });
   });
 }

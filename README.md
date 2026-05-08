@@ -62,6 +62,27 @@ dew kanban create --title "My first ticket" --type task
 dew kanban tui
 ```
 
+## Scaffold templates
+
+`dew init` supports layered user scaffolds from
+`${XDG_CONFIG_HOME:-~/.config}/dew/scaffolds`:
+
+```bash
+# Apply implicit _default scaffold, then merge dart overlay
+dew init --scaffold-merge dart
+
+# Layer explicit base scaffolds and strict overlays
+dew init --scaffold team --scaffold-merge dart --scaffold-strict ci
+```
+
+Template conventions:
+
+- `filename` → static file
+- `filename.liquid` → rendered base template
+- `filename.part.liquid` → rendered merge fragment
+
+See [Init and Scaffolds](./docs/features/init.md) for full behavior.
+
 ## Configuration
 
 Dew reads `.project/dew.yaml` for board columns, ticket types, ID prefix, and MCP server settings. Running `dew init .` generates this file with defaults. See the [Configuration documentation](./docs/config.md) for the full schema reference.
@@ -70,6 +91,7 @@ Dew reads `.project/dew.yaml` for board columns, ticket types, ID prefix, and MC
 
 - [Full documentation index](./docs/index.md)
 - [Infrastructure](./docs/features/infra.md) — service manifests, Quadlet install, lifecycle commands
+- [Init and scaffolds](./docs/features/init.md) — layered template conventions and merge behavior
 - [Kanban board](./docs/features/kanban.md) — CLI commands, TUI keybindings, ticket format
 - [MCP server](./docs/features/mcp.md) — AI agent integration
 - [Configuration reference](./docs/config.md)

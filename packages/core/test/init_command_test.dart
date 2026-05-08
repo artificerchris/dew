@@ -145,5 +145,46 @@ void main() {
         throwsA(isA<StateError>()),
       );
     });
+
+    test('merges into existing .editorconfig idempotently', () async {
+      fs.directory('/workspace').createSync(recursive: true);
+      fs.file('/workspace/.editorconfig').writeAsStringSync('root = true\n');
+
+      fs
+          .directory('/home/artificer/.config/dew/scaffolds/merge')
+          .createSync(recursive: true);
+      fs
+          .file('/home/artificer/.config/dew/scaffolds/merge/.editorconfig.part.liquid')
+          .writeAsStringSync(
+            '# dew-part: editorconfig\n'
+            '# id: dart-core\n'
+            '# mode: merge\n'
+            '\n'
+            '[*.dart]\n'
+            'indent_size = 2\n',
+          );
+
+      await runner.run([
+        'init',
+        '--path',
+        '/workspace',
+        '--scaffold-merge',
+        'merge',
+      ]);
+      final first = fs.file('/workspace/.editorconfig').readAsStringSync();
+
+      await runner.run([
+        'init',
+        '--path',
+        '/workspace',
+        '--scaffold-merge',
+        'merge',
+      ]);
+      final second = fs.file('/workspace/.editorconfig').readAsStringSync();
+
+      expect(second, first);
+      expect(RegExp(r'#region dart-core').allMatches(second), hasLength(1));
+      expect(second, contains('[*.dart]\nindent_size = 2'));
+    });
   });
 }

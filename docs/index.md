@@ -8,6 +8,7 @@ Welcome to the documentation for the Dew project management tool!
 
 ### Features
 
+- [Init and Scaffolds](./features/init.md) — Bootstrap projects and layer user scaffold templates
 - [Kanban Board](./features/kanban.md) — Visualize and manage tasks in a column-based workflow
 - [Infrastructure](./features/infra.md) — Manage local service manifests and Podman Quadlets
 - [MCP Server](./features/mcp.md) — AI agent integration via the Model Context Protocol

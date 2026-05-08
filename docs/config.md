@@ -2,6 +2,9 @@
 
 Dew is configured via a `dew.yaml` file stored in the `.project/` directory at the root of your project. Running `dew init .` will generate this file with sensible defaults.
 
+For scaffold template layering and `dew init` flags, see
+[Init and Scaffolds](./features/init.md).
+
 ## File Location
 
 ```text

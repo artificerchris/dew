@@ -236,7 +236,8 @@ class InitCommand extends Command<void> {
     for (final entry in planned.entries) {
       final targetPath = p.join(projectRoot, entry.key);
       final targetFile = _fs.file(targetPath);
-      if (await targetFile.exists()) {
+      if (await targetFile.exists() &&
+          !_canMergeIntoExistingTarget(entry.key)) {
         throw StateError(
           'Scaffold collision at "${entry.key}" with existing project file. '
           'Choose a different scaffold set or remove the destination file.',
@@ -251,6 +252,10 @@ class InitCommand extends Command<void> {
       await _fs.file(targetPath).writeAsString(entry.value.content);
       print('  scaffold ${entry.key} <- ${entry.value.scaffoldLabel}');
     }
+  }
+
+  bool _canMergeIntoExistingTarget(String targetPath) {
+    return targetPath == '.editorconfig';
   }
 
   String _scaffoldRoot() {
@@ -351,15 +356,33 @@ class InitCommand extends Command<void> {
       }
 
       var baseContent = prior?.content ?? '';
+      if (prior == null && _canMergeIntoExistingTarget(targetPath)) {
+        final existing = _fs.file(p.join(projectRoot, targetPath));
+        if (await existing.exists()) {
+          baseContent = await existing.readAsString();
+        }
+      }
       if (contribution.templateSourcePath != null) {
-        baseContent = await _renderLiquidFile(
+        final renderedTemplate = await _renderLiquidFile(
           sourcePath: contribution.templateSourcePath!,
           projectRoot: projectRoot,
           scaffoldLabel: scaffold.label,
           targetPath: targetPath,
         );
+        if (_canMergeIntoExistingTarget(targetPath)) {
+          baseContent = _mergeEditorConfig(baseContent, renderedTemplate);
+        } else {
+          baseContent = renderedTemplate;
+        }
       } else if (contribution.staticSourcePath != null) {
-        baseContent = await _fs.file(contribution.staticSourcePath!).readAsString();
+        final staticContent = await _fs
+            .file(contribution.staticSourcePath!)
+            .readAsString();
+        if (_canMergeIntoExistingTarget(targetPath)) {
+          baseContent = _mergeEditorConfig(baseContent, staticContent);
+        } else {
+          baseContent = staticContent;
+        }
       }
 
       for (final partSourcePath in contribution.partSourcePaths) {
@@ -370,12 +393,21 @@ class InitCommand extends Command<void> {
           targetPath: targetPath,
         );
         final parsedPart = _parsePartContent(renderedPart);
+        final regionName = _partRegionName(
+          parsedPart,
+          p.basename(partSourcePath),
+        );
+        baseContent = _removeRegionBlock(
+          content: baseContent,
+          targetPath: targetPath,
+          regionName: regionName,
+        );
         final part = _wrapPartWithRegion(
           targetPath: targetPath,
           part: parsedPart,
-          fallbackRegionName: p.basename(partSourcePath),
+          fallbackRegionName: regionName,
         );
-        if (targetPath == '.editorconfig') {
+        if (_canMergeIntoExistingTarget(targetPath)) {
           baseContent = _mergeEditorConfig(baseContent, part);
         } else {
           baseContent = _appendTextPart(baseContent, part);
@@ -523,16 +555,49 @@ class InitCommand extends Command<void> {
     return fallback;
   }
 
+  String _removeRegionBlock({
+    required String content,
+    required String targetPath,
+    required String regionName,
+  }) {
+    if (content.isEmpty) return content;
+    final commentPrefix = _commentPrefixForPath(targetPath);
+    final start = _regionStart(commentPrefix, regionName);
+    final end = _regionEnd(commentPrefix, regionName);
+    final lines = content.replaceAll('\r\n', '\n').split('\n');
+    final kept = <String>[];
+    var skipping = false;
+    for (final line in lines) {
+      final trimmed = line.trimRight();
+      if (!skipping && trimmed == start) {
+        skipping = true;
+        continue;
+      }
+      if (skipping) {
+        if (trimmed == end) {
+          skipping = false;
+        }
+        continue;
+      }
+      kept.add(line);
+    }
+    return kept.join('\n').trimRight();
+  }
+
   String _mergeEditorConfig(String base, String part) {
     final baseSections = _parseEditorConfigSections(base);
     final partSections = _parseEditorConfigSections(part);
 
     for (final section in partSections.order) {
-      final lines = partSections.linesBySection[section] ?? const <String>[];
+      final incoming = partSections.linesBySection[section] ?? const <String>[];
+      final existing = baseSections.linesBySection[section] ?? const <String>[];
       if (!baseSections.linesBySection.containsKey(section)) {
         baseSections.order.add(section);
       }
-      baseSections.linesBySection[section] = lines;
+      baseSections.linesBySection[section] = _mergeEditorConfigSection(
+        existing: existing,
+        incoming: incoming,
+      );
     }
 
     final buffer = StringBuffer();
@@ -552,6 +617,49 @@ class InitCommand extends Command<void> {
     var rendered = buffer.toString();
     rendered = rendered.replaceAll(RegExp(r'\n{3,}'), '\n\n');
     return '${rendered.trimRight()}\n';
+  }
+
+  List<String> _mergeEditorConfigSection({
+    required List<String> existing,
+    required List<String> incoming,
+  }) {
+    final merged = <String>[...existing];
+    final keyIndex = <String, int>{};
+
+    for (var i = 0; i < merged.length; i++) {
+      final key = _editorConfigKey(merged[i]);
+      if (key != null) {
+        keyIndex[key] = i;
+      }
+    }
+
+    for (final line in incoming) {
+      final key = _editorConfigKey(line);
+      if (key == null) {
+        if (!merged.contains(line)) {
+          merged.add(line);
+        }
+        continue;
+      }
+      final index = keyIndex[key];
+      if (index == null) {
+        keyIndex[key] = merged.length;
+        merged.add(line);
+      } else {
+        merged[index] = line;
+      }
+    }
+
+    return merged;
+  }
+
+  String? _editorConfigKey(String line) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.startsWith('#') || trimmed.startsWith(';')) return null;
+    final match = RegExp(r'^([A-Za-z0-9_.-]+)\s*=').firstMatch(trimmed);
+    if (match == null) return null;
+    return match.group(1);
   }
 
   _EditorConfigSections _parseEditorConfigSections(String content) {
