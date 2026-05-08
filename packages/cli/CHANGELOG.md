@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2 — 2026-05-08
+
+- Add scaffold templating improvements, docs, and release polish.
+
 ## 0.4.1 — 2026-05-05
 
 Patch release.
