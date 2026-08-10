@@ -218,8 +218,9 @@ class TicketStore {
     await found.file.delete();
     // Clean up per-ticket attachment directory if present.
     final attachmentsDir = fs.directory(p.join(kanbanDir, 'attachments', id));
-    if (await attachmentsDir.exists())
+    if (await attachmentsDir.exists()) {
       await attachmentsDir.delete(recursive: true);
+    }
   }
 
   /// Searches all column subdirectories (one level deep) for a ticket file.
@@ -231,8 +232,9 @@ class TicketStore {
       if (entity is! Directory) continue;
       if (p.basename(entity.path) == 'attachments') continue;
       final file = fs.file(p.join(entity.path, '$id.md'));
-      if (await file.exists())
+      if (await file.exists()) {
         return (file: file, column: p.basename(entity.path));
+      }
     }
     return null;
   }
@@ -243,8 +245,9 @@ class TicketStore {
     final pattern = RegExp(r'^' + RegExp.escape(prefix) + r'-(\d+)\.md$');
     var max = 0;
     await for (final entity in dir.list()) {
-      if (entity is! Directory || p.basename(entity.path) == 'attachments')
+      if (entity is! Directory || p.basename(entity.path) == 'attachments') {
         continue;
+      }
       await for (final file in entity.list()) {
         final match = pattern.firstMatch(p.basename(file.path));
         if (match != null) {

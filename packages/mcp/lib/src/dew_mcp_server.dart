@@ -5,7 +5,7 @@ import 'package:dew_core/dew_core.dart';
 base class DewMcpServer extends MCPServer with ToolsSupport {
   DewMcpServer(super.channel, List<McpTool> tools)
     : super.fromStreamChannel(
-        implementation: Implementation(name: 'dew', version: '1.0.0'),
+        implementation: Implementation(name: 'dew', version: '0.4.0'),
         instructions:
             'Tools for managing a Dew project (kanban tickets, etc.).',
       ) {

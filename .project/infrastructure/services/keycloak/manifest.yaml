@@ -1,0 +1,21 @@
+id: keycloak
+name: Keycloak
+
+runtime:
+  type: podman-quadlet
+
+quadlets:
+  - file: dew_keycloak.network
+    unit: dew_keycloak-network.service
+  - file: dew_keycloak-postgresql.volume
+    unit: dew_keycloak-postgresql-volume.service
+  - file: dew_keycloak-postgresql.container
+    unit: dew_keycloak-postgresql.service
+    container_name: dew_keycloak-postgresql
+  - file: dew_keycloak.container
+    unit: dew_keycloak.service
+    container_name: dew_keycloak
+
+schemas:
+  configure: schemas/configure.schema.json
+  init: schemas/init.schema.json

@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://artificery.dev/dew/samples/valkey-9/init.schema.json",
+  "title": "Valkey 9 Sample Initialization",
+  "description": "Initialization values for the sample Valkey service.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://artificery.dev/dew/samples/keycloak/configure.schema.json",
+  "title": "Keycloak Sample Configuration",
+  "description": "Configuration values represented by the sample Keycloak Quadlets.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "host_port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 8080
+    },
+    "admin_username": {
+      "type": "string",
+      "minLength": 1,
+      "default": "admin"
+    },
+    "database": {
+      "type": "string",
+      "minLength": 1,
+      "default": "keycloak"
+    },
+    "database_volume": {
+      "type": "string",
+      "minLength": 1,
+      "default": "dew_keycloak_postgresql_data"
+    }
+  }
+}

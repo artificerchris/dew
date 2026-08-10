@@ -9,7 +9,7 @@ import '../ticket_store.dart';
 class ArchiveCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  ArchiveCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  ArchiveCommand({this._fs = const LocalFileSystem()}) {
     argParser.addOption(
       'id',
       abbr: 'i',

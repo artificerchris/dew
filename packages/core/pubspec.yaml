@@ -1,17 +1,18 @@
 name: dew_core
 description: Core shared types, interfaces, and configuration for the Dew project management tool.
-version: 0.2.0
+version: 0.4.2
 repository: https://github.com/artificerchris/dew
 issue_tracker: https://github.com/artificerchris/dew/issues
 resolution: workspace
 
 environment:
-  sdk: ^3.11.4
+  sdk: ^3.12.0
 
 # Add regular dependencies here.
 dependencies:
   args: ^2.7.0
   file: ^7.0.1
+  liquify: ^1.5.1
   path: ^1.9.0
   yaml: ^3.1.0
 

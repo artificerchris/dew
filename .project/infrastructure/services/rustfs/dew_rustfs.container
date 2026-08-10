@@ -1,0 +1,23 @@
+[Unit]
+Description=Dew sample RustFS object storage
+Requires=dew_rustfs.network dew_rustfs.volume
+After=dew_rustfs.network dew_rustfs.volume
+
+[Container]
+Image=docker.io/rustfs/rustfs:latest
+ContainerName=dew_rustfs
+Network=dew_rustfs.network
+PublishPort=127.0.0.1:9000:9000
+PublishPort=127.0.0.1:9001:9001
+Volume=dew_rustfs.volume:/data
+Environment=RUSTFS_ACCESS_KEY=rustfsadmin
+Environment=RUSTFS_SECRET_KEY=rustfsadmin
+Environment=RUSTFS_CONSOLE_ENABLE=true
+Exec=/data
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

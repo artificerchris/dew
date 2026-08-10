@@ -1,10 +1,16 @@
 # Changelog
 
-## 0.2.0 — 2026-05-02
+## 0.4.2 — 2026-05-08
 
-- Removed unsupported project-level MCP `host` and `port` config handling.
-- Clarified that `dew mcp serve` is configured by the MCP client over stdio.
-- Bumped Dew package dependency constraints to `^0.2.0`.
+- Add scaffold templating improvements, docs, and release polish.
+
+## 0.4.0 — 2026-05-05
+
+Infra MCP tool release.
+
+- Published with `dew_core` `0.4.0`, which allows commands to expose
+  path-specific MCP tools through `McpToolProvider`.
+- Updated test coverage for provider-supplied MCP tools.
 
 ## 0.1.0 — 2026-04-25
 

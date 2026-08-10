@@ -2,6 +2,9 @@
 
 Dew is configured via a `dew.yaml` file stored in the `.project/` directory at the root of your project. Running `dew init .` will generate this file with sensible defaults.
 
+For scaffold template layering and `dew init` flags, see
+[Init and Scaffolds](./features/init.md).
+
 ## File Location
 
 ```text
@@ -10,10 +13,20 @@ your-project/
     └── dew.yaml
 ```
 
+Path-like values in `dew.yaml` are resolved relative to `.project/dew.yaml`
+unless they are absolute (for example, paths under `dew.vault`).
+
+Infrastructure services are not configured in `dew.yaml`; they are discovered
+from `.project/infrastructure/services/*/manifest.yaml`.
+
 ## Full Schema
 
 ```yaml
 dew:
+  mcp:
+    host: "localhost"   # Hostname the MCP server binds to
+    port: 8080          # Port the MCP server listens on
+
   kanban:
     prefix: "PROJ"      # Short prefix used for ticket IDs (e.g. PROJ-42)
 
@@ -43,8 +56,12 @@ dew:
 
 ## Reference
 
-The MCP server currently has no project-level `dew.yaml` configuration. Configure
-your MCP client to run `dew mcp serve`; see the [MCP documentation](./features/mcp.md).
+### `dew.mcp`
+
+| Field  | Type    | Default       | Description                       |
+| ------ | ------- | ------------- | --------------------------------- |
+| `host` | string  | `"localhost"` | Hostname the MCP server binds to. |
+| `port` | integer | `8080`        | Port the MCP server listens on.   |
 
 ### `dew.kanban`
 

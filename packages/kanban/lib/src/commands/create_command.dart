@@ -8,7 +8,7 @@ import '../ticket_store.dart';
 class CreateCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  CreateCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  CreateCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption('title', abbr: 't', mandatory: true, help: 'Ticket title.')
       ..addOption(

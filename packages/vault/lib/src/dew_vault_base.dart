@@ -9,19 +9,21 @@ import 'commands/rename_command.dart';
 import 'commands/rotate_command.dart';
 import 'commands/set_command.dart';
 import 'commands/update_command.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 
 /// Top-level CLI command for all Vault operations.
 class VaultCommand extends DewCommand {
-  VaultCommand() {
-    addSubcommand(VaultInitCommand());
-    addSubcommand(ListCommand());
-    addSubcommand(SetCommand());
-    addSubcommand(GetCommand());
-    addSubcommand(UpdateCommand());
-    addSubcommand(RenameCommand());
-    addSubcommand(RotateCommand());
-    addSubcommand(GenerateCommand());
-    addSubcommand(DeleteCommand());
+  VaultCommand({FileSystem fs = const LocalFileSystem()}) {
+    addSubcommand(VaultInitCommand(fs: fs));
+    addSubcommand(ListCommand(fs: fs));
+    addSubcommand(SetCommand(fs: fs));
+    addSubcommand(GetCommand(fs: fs));
+    addSubcommand(UpdateCommand(fs: fs));
+    addSubcommand(RenameCommand(fs: fs));
+    addSubcommand(RotateCommand(fs: fs));
+    addSubcommand(GenerateCommand(fs: fs));
+    addSubcommand(DeleteCommand(fs: fs));
   }
 
   @override

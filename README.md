@@ -18,6 +18,12 @@ stats   board   config   tui
 
 Tickets are stored as `.project/kanban/<column>/<ID>.md` files. Labels, milestones, typed bidirectional links, and inline comments are all first-class citizens. See the [Kanban documentation](./docs/features/kanban.md) for the full command reference.
 
+### Infrastructure
+
+`dew infra` discovers services under `.project/infrastructure/services`, validates
+their manifests and schemas, and manages Podman Quadlets through systemd. The
+runtime boundary is explicit so other container backends can be added later.
+
 ### Interactive TUI
 
 `dew kanban tui` opens a full Trello-style terminal board with three modes:
@@ -30,7 +36,10 @@ The TUI auto-refreshes when ticket files change on disk, so it stays in sync whe
 
 ### MCP Server
 
-`dew mcp serve` starts an MCP-compliant stdio server that exposes every kanban command as an MCP tool. AI agents (GitHub Copilot, Claude, etc.) can create tickets, move cards, search, and comment — using the exact same logic as the CLI. No separate tool definitions needed: every command that mixes in `DewToolCommand` is registered automatically. See the [MCP documentation](./docs/features/mcp.md).
+`dew mcp serve` starts an MCP-compliant stdio server that exposes Dew commands
+as MCP tools. AI agents (GitHub Copilot, Claude, etc.) can create tickets, move
+cards, search, comment, and manage project infrastructure through the same logic
+as the CLI. See the [MCP documentation](./docs/features/mcp.md).
 
 ## Installation
 
@@ -38,7 +47,7 @@ The TUI auto-refreshes when ticket files change on disk, so it stays in sync whe
 dart pub global activate dew
 ```
 
-Requires Dart SDK ^3.11.4.
+Requires Dart SDK ^3.12.0.
 
 ## Quick start
 
@@ -53,13 +62,36 @@ dew kanban create --title "My first ticket" --type task
 dew kanban tui
 ```
 
+## Scaffold templates
+
+`dew init` supports layered user scaffolds from
+`${XDG_CONFIG_HOME:-~/.config}/dew/scaffolds`:
+
+```bash
+# Apply implicit _default scaffold, then merge dart overlay
+dew init --scaffold-merge dart
+
+# Layer explicit base scaffolds and strict overlays
+dew init --scaffold team --scaffold-merge dart --scaffold-strict ci
+```
+
+Template conventions:
+
+- `filename` → static file
+- `filename.liquid` → rendered base template
+- `filename.part.liquid` → rendered merge fragment
+
+See [Init and Scaffolds](./docs/features/init.md) for full behavior.
+
 ## Configuration
 
-Dew reads `.project/dew.yaml` for board columns, ticket types, and ID prefix. Running `dew init .` generates this file with defaults. See the [Configuration documentation](./docs/config.md) for the full schema reference.
+Dew reads `.project/dew.yaml` for board columns, ticket types, ID prefix, and MCP server settings. Running `dew init .` generates this file with defaults. See the [Configuration documentation](./docs/config.md) for the full schema reference.
 
 ## Documentation
 
 - [Full documentation index](./docs/index.md)
+- [Infrastructure](./docs/features/infra.md) — service manifests, Quadlet install, lifecycle commands
+- [Init and scaffolds](./docs/features/init.md) — layered template conventions and merge behavior
 - [Kanban board](./docs/features/kanban.md) — CLI commands, TUI keybindings, ticket format
 - [MCP server](./docs/features/mcp.md) — AI agent integration
 - [Configuration reference](./docs/config.md)

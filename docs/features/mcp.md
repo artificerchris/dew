@@ -6,17 +6,26 @@ The Dew Model Context Protocol (MCP) Server is a feature that allows AI agents t
 
 The MCP feature is split across two packages to keep concerns separate:
 
-- **`packages/core`** defines the `DewToolCommand` mixin. Any command that mixes it in is automatically
-  registered as an MCP tool — the mixin derives the tool's JSON Schema directly from the command's own
-  `ArgParser`, so tools and CLI commands share a single definition.
+- **`packages/core`** defines the `DewToolCommand` mixin and `McpToolProvider`
+  interface. Commands that mix in `DewToolCommand` are automatically registered
+  as MCP tools, and commands that implement `McpToolProvider` can expose extra
+  path-specific tools.
 - **`packages/mcp`** implements the actual server. It reads the list of tools from `CommandRegistry` and
   serves them over stdio using the [dart\_mcp](https://pub.dev/packages/dart_mcp) package. Only the `cli`
   package depends on `packages/mcp`; feature packages like `kanban` remain decoupled from the transport layer.
 
 ## Configuration
 
-The MCP server currently has no `.project/dew.yaml` settings. Configure your MCP
-client to launch `dew mcp serve`; the server communicates over stdio.
+The MCP server is configured under the `mcp` key in `.project/dew.yaml`. By default it runs on `localhost` at port `8080`.
+
+```yaml
+dew:
+  mcp:
+    host: "localhost"
+    port: 8080
+```
+
+See the [Configuration documentation](../config.md) for full details.
 
 ## Running the server
 
@@ -65,6 +74,29 @@ The following tools are registered by the `kanban` package:
 | `kanban_stats`            | Show ticket counts grouped by column and type                           |
 | `kanban_link_tickets`     | Link two tickets with a typed relationship (bidirectional)              |
 | `kanban_unlink_tickets`   | Remove a link between two tickets (both sides)                          |
+
+The following tools are registered by the `infra` package:
+
+| Tool                         | Description                                      |
+| ---------------------------- | ------------------------------------------------ |
+| `infra_list_services`        | List infrastructure services                     |
+| `infra_show_service`         | Show manifest and runtime details                |
+| `infra_validate_services`    | Validate one service or all services             |
+| `infra_configure_service`    | CLI-default configure path placeholder           |
+| `infra_configure_schema`     | Show the configure JSON Schema                   |
+| `infra_configure_show`       | Show the active configure payload                |
+| `infra_configure_apply`      | Apply configure payload values                   |
+| `infra_init_service`         | CLI-default init path placeholder                |
+| `infra_init_schema`          | Show the init JSON Schema                        |
+| `infra_init_run`             | Write an initialization payload                  |
+| `infra_install_service`      | Install service Quadlets                         |
+| `infra_uninstall_service`    | Uninstall service Quadlets                       |
+| `infra_up_service`           | Install, reload, and start services              |
+| `infra_down_service`         | Stop services                                    |
+| `infra_restart_service`      | Restart services                                 |
+| `infra_status_service`       | Show service runtime status                      |
+| `infra_logs`                 | Read service logs                                |
+| `infra_delete_service`       | Delete declared runtime artifacts                |
 
 ### Link types
 

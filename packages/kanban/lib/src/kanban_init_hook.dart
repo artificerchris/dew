@@ -8,7 +8,7 @@ import 'kanban_config.dart';
 class KanbanInitHook implements DewInitHook {
   final FileSystem _fs;
 
-  KanbanInitHook({FileSystem fs = const LocalFileSystem()}) : _fs = fs;
+  KanbanInitHook({this._fs = const LocalFileSystem()});
 
   @override
   Future<void> onInit(

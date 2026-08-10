@@ -8,7 +8,9 @@ Welcome to the documentation for the Dew project management tool!
 
 ### Features
 
+- [Init and Scaffolds](./features/init.md) — Bootstrap projects and layer user scaffold templates
 - [Kanban Board](./features/kanban.md) — Visualize and manage tasks in a column-based workflow
+- [Infrastructure](./features/infra.md) — Manage local service manifests and Podman Quadlets
 - [MCP Server](./features/mcp.md) — AI agent integration via the Model Context Protocol
 
 ## Package Architecture
@@ -19,12 +21,15 @@ Dew is structured as a Dart workspace with the following packages:
 | ----------------- | -------------------------------------------------------------------------------------------- |
 | `packages/cli`    | The `dew` command-line tool. Wires all packages together at startup.                         |
 | `packages/core`   | Shared foundation: `DewCommand`, `DewToolCommand` mixin, `CommandRegistry`, and `DewConfig`. |
+| `packages/infra`  | Infrastructure service discovery, validation, and runtime lifecycle commands.                |
 | `packages/kanban` | Kanban board logic. Each command automatically registers itself as an MCP tool.              |
 | `packages/mcp`    | The MCP server. Collects tools from `CommandRegistry` and serves them over stdio.            |
 
 ### How commands become MCP tools
 
-Every CLI command that mixes in `DewToolCommand` is automatically registered as an MCP tool — no separate registration needed. The mixin derives the JSON Schema for the tool's input from the command's own `ArgParser`, so argument definitions are written exactly once.
+Every CLI command that mixes in `DewToolCommand` is automatically registered as
+an MCP tool. Commands that need more granular tool paths can also implement
+`McpToolProvider` to expose additional tools.
 
 ```text
 ArgParser definition
@@ -38,6 +43,6 @@ ArgParser definition
 `DewConfig` in `core` is a thin wrapper around the raw YAML map. Feature packages add typed accessors via Dart extensions:
 
 - `dew_kanban` defines `KanbanDewConfig` — exposes `context.config.kanban`
-- `dew_mcp` currently has no project-level config values
+- `dew_mcp` defines `McpDewConfig` — exposes `context.config.mcp`
 
-This keeps feature-specific config classes out of `core`.
+This keeps feature-specific config classes out of `core` while leaving all call sites unchanged.

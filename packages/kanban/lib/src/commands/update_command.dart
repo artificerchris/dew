@@ -8,7 +8,7 @@ import '../ticket_store.dart';
 class UpdateCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  UpdateCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  UpdateCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption('id', abbr: 'i', mandatory: true, help: 'Ticket ID.')
       ..addOption('title', abbr: 't', help: 'New title.')

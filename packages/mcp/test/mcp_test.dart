@@ -34,6 +34,13 @@ void main() {
       expect(registry.mcpTools, hasLength(1));
       expect(registry.mcpTools.first.name, 'stub_tool');
     });
+
+    test('collects extra tools from McpToolProvider commands', () {
+      final registry = CommandRegistry();
+      registry.register(_StubProviderCommand());
+      expect(registry.mcpTools, hasLength(1));
+      expect(registry.mcpTools.first.name, 'provided_tool');
+    });
   });
 
   group('Kanban MCP tools via CommandRegistry', () {
@@ -122,6 +129,26 @@ class _StubParentCommand extends DewCommand {
   final String name = 'parent';
   @override
   final String description = 'Parent.';
+  @override
+  Future<void> run() async => printUsage();
+}
+
+class _StubProviderCommand extends DewCommand implements McpToolProvider {
+  @override
+  final String name = 'provider';
+  @override
+  final String description = 'Provider.';
+
+  @override
+  List<McpTool> get tools => [
+    McpTool(
+      name: 'provided_tool',
+      description: 'A provided tool.',
+      inputSchema: const {'type': 'object'},
+      handler: (_) async => 'ok',
+    ),
+  ];
+
   @override
   Future<void> run() async => printUsage();
 }

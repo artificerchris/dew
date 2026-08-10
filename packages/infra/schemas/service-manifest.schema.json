@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://artificery.dev/dew/schemas/infra/service-manifest.schema.json",
+  "title": "Dew Infrastructure Service Manifest",
+  "description": "Schema for .project/infrastructure/services/<service-id>/manifest.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "quadlets", "schemas"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9_.-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["podman-quadlet"],
+          "default": "podman-quadlet"
+        }
+      }
+    },
+    "quadlets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file"],
+        "properties": {
+          "file": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^/].*\\.(artifact|build|container|image|kube|network|pod|volume)$"
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^/]+\\.service$"
+          },
+          "container_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dropins_dir": {
+            "type": "string",
+            "minLength": 1
+          },
+          "profiles_dir": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "description": "Additional files installed beside Quadlets, such as Containerfiles for build contexts.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[^/].*$"
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configure", "init"],
+      "properties": {
+        "configure": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/].*\\.json$"
+        },
+        "init": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/].*\\.json$"
+        }
+      }
+    }
+  }
+}

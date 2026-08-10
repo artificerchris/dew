@@ -1,16 +1,16 @@
 name: dew_kanban
 description: Kanban board feature for the Dew project management tool. Implements McpToolProvider to expose board tools to the MCP server.
-version: 0.2.0
+version: 0.4.2
 repository: https://github.com/artificerchris/dew
 issue_tracker: https://github.com/artificerchris/dew/issues
 resolution: workspace
 
 environment:
-  sdk: ^3.11.4
+  sdk: ^3.12.0
 
 # Add regular dependencies here.
 dependencies:
-  dew_core: ^0.2.0
+  dew_core: ^0.4.2
   dart_console: ^4.1.2
   file: ^7.0.1
   path: ^1.9.0

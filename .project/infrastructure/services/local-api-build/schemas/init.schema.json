@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://artificery.dev/dew/samples/local-api-build/init.schema.json",
+  "title": "Local API Build Sample Initialization",
+  "description": "Initialization values for the sample local build service.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

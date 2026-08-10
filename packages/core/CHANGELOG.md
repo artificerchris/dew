@@ -1,9 +1,16 @@
 # Changelog
 
-## 0.2.0 — 2026-05-02
+## 0.4.2 — 2026-05-08
 
-- Removed stale MCP config references from core config documentation.
-- Updated `dew init` defaults to generate only supported project config.
+- Add scaffold templating improvements, docs, and release polish.
+
+## 0.4.0 — 2026-05-05
+
+Infra and MCP provider release.
+
+- Extended `CommandRegistry.mcpTools` to collect extra tools from
+  `McpToolProvider` command classes.
+- Kept `InitCommand` analyzer-clean with the Dart SDK `3.12` lint set.
 
 ## 0.1.0 — 2026-04-25
 

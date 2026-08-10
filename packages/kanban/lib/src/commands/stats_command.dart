@@ -8,7 +8,7 @@ import '../ticket_store.dart';
 class StatsCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  StatsCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs;
+  StatsCommand({this._fs = const LocalFileSystem()});
   @override
   final String name = 'stats';
 

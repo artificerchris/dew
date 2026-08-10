@@ -1,0 +1,16 @@
+[Unit]
+Description=Dew sample pod web container
+Requires=dew_app-pod.pod
+After=dew_app-pod.pod
+
+[Container]
+Image=docker.io/library/nginx:alpine
+ContainerName=dew_app-pod-web
+Pod=dew_app-pod.pod
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

@@ -1,9 +1,23 @@
 # Changelog
 
-## 0.2.0 — 2026-05-02
+## 0.4.2 — 2026-05-08
 
-- Added the `dew` executable mapping for pub activation.
-- Bumped Dew package dependency constraints to `^0.2.0`.
+- Add scaffold templating improvements, docs, and release polish.
+
+## 0.4.1 — 2026-05-05
+
+Patch release.
+
+- Restored the pubspec `executables` declaration so
+  `dart pub global activate dew` installs the `dew` launcher.
+
+## 0.4.0 — 2026-05-05
+
+Infra release.
+
+- Added the `dew infra` command group to the CLI.
+- Registered the infra package alongside kanban, MCP, and vault packages.
+- Updated CLI dependencies for the `0.4.0` package set.
 
 ## 0.1.0 — 2026-04-25
 

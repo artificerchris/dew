@@ -1,7 +1,6 @@
 # Dew Vault Secret Manager
 
-Dew Vault is a secret manager for your projects. It helps you keep secrets out of
-version control by storing each secret as an encrypted file under `.project/vault`.
+Dew Vault stores project secrets as encrypted files under `.project/vault`.
 By default the vault password is stored in `.project/secrets/dew.vault.password`.
 
 ## Config
@@ -31,9 +30,9 @@ dew:
         description: Generate stable-looking unique IDs.
 ```
 
-`generators` maps a generator name (for example `postgres_password`) to a built-in
-generator definition. Values under `config` are defaults and can be overridden per
-run or stored in secret rotation metadata.
+`generators` maps a generator name to a built-in generator definition. Values
+under `config` are defaults and can be overridden per command invocation or in
+secret rotation metadata.
 
 Built-in generator types are resolved inside Dew, so secrets can be generated
 without depending on host binaries.
@@ -45,17 +44,15 @@ machine-friendly automation.
 
 ### Initialize Vault
 
-Initialize the vault storage and metadata.
+Initialize vault directories and password file.
 
 ```bash
 dew vault init
-
 dew vault init --password-file .project/secrets/dew.vault.password
+dew vault init --storage-dir .project/vault
 ```
 
 ### List all secrets
-
-List stored secrets.
 
 ```bash
 dew vault list
@@ -67,23 +64,15 @@ dew vault list --format json
 `set` stores or replaces a secret and optional metadata.
 
 ```bash
-dew vault set <secret-name> # Prompts for secret value
-dew vault set <secret-name> --env ENV_VAR_NAME # Uses value from environment variable
-dew vault set <secret-name> --file /path/to/secret.txt # Uses value from file
-echo "secret value" | dew vault set <secret-name> # Uses piped stdin
-
-# Include metadata for automated rotation requirements
-dew vault set DB_PASSWORD --metadata '{"rotation":{"enabled":true,"generator":"postgres_password","length":64}}'
-dew vault set DB_PASSWORD --metadata-file .project/vault/db_password.meta.json
+dew vault set --name DB_PASSWORD --file /path/to/secret.txt
+dew vault set --name DB_PASSWORD --env ENV_VAR_NAME
 ```
 
 ### Get a secret
 
-`get` retrieves a secret by name.
-
 ```bash
-dew vault get <secret-name>
-dew vault get <secret-name> --format json
+dew vault get --name DB_PASSWORD
+dew vault get --name DB_PASSWORD --format json
 ```
 
 ### Update a secret
@@ -92,56 +81,43 @@ dew vault get <secret-name> --format json
 metadata only.
 
 ```bash
-dew vault update <secret-name> --env ROLLED_PASSWORD
-dew vault update <secret-name> --metadata '{"rotation":{"enabled":false}}'
-dew vault update <secret-name> --metadata-file .project/vault/db_password.meta.json
+dew vault update --name DB_PASSWORD --metadata '{"rotation":{"enabled":true,"generator":"postgres_password","length":64}}'
+dew vault update --name DB_PASSWORD --metadata-file .project/vault/db_password.meta.json
 ```
 
 ### Rename a secret
 
-`rename` changes a secret identifier while preserving value and metadata.
-
 ```bash
-dew vault rename OLD_NAME NEW_NAME
-dew vault rename OLD_NAME NEW_NAME --format json
+dew vault rename --from OLD_NAME --to NEW_NAME
+dew vault rename --from OLD_NAME --to NEW_NAME --format json
 ```
 
 ### Generate a secret value
 
-`generate` runs a built-in generator without writing to the vault by default.
+`generate` uses configured generators without writing to the vault by default.
 
 ```bash
-dew vault generate postgres_password --length 64 --include_symbols
-dew vault generate jwt_secret --bytes 64 --encoding base64
-dew vault generate postgres_password --service payments --username app_user --format json
-```
-
-Pipe generated output directly into `set` when needed:
-
-```bash
-dew vault generate postgres_password --service payments | dew vault set DB_PASSWORD
+dew vault generate --generator postgres_password --arg length=64 --arg include_symbols=true
+dew vault generate --generator jwt_secret --arg bytes=64 --arg encoding=base64
+dew vault generate --generator postgres_password --arg service=payments --arg username=app_user --format json
 ```
 
 ### Rotate secrets
 
 `rotate` rewraps secrets with a new vault password when run without a name.
-When run with a secret name, it rotates only that secret. For a secret with rotation
-metadata (`rotation.enabled: true` and `rotation.generator`), Dew invokes that
-configured built-in generator using the provided rotation values.
+When run with a secret name, it rotates only that secret.
 
 ```bash
 dew vault rotate
-dew vault rotate <secret-name>
-dew vault rotate <secret-name> --format json
+dew vault rotate --name DB_PASSWORD
+dew vault rotate --name DB_PASSWORD --format json
 ```
 
 ### Delete a secret
 
-`delete` removes a secret and metadata from the vault.
-
 ```bash
-dew vault delete <secret-name>
-dew vault delete <secret-name> --format json
+dew vault delete --name DB_PASSWORD
+dew vault delete --name DB_PASSWORD --format json
 ```
 
 ### Metadata format for rotation-aware secrets
@@ -151,7 +127,6 @@ Attach arbitrary metadata and include rotation policy details. Example shape:
 ```json
 {
   "rotation": {
-    "enabled": true,
     "generator": "postgres_password",
     "service": "payments",
     "username": "app_user",
@@ -164,6 +139,6 @@ Attach arbitrary metadata and include rotation policy details. Example shape:
 Rotation flow:
 
 1. Define a built-in generator in `dew.yaml` under `dew.vault.generators`.
-2. Attach `rotation.generator` and generator args to the secret metadata.
-3. Run `dew vault rotate <secret-name>` to rotate one secret, or `dew vault rotate`
-   to rotate all configured secrets.
+2. Attach `rotation.generator` and generator args to secret metadata.
+3. Run `dew vault rotate --name ...` to rotate one secret, or `dew vault rotate`
+   to rotate all secrets.

@@ -4,6 +4,9 @@ import 'package:test/test.dart';
 
 const _testConfig = '''
 dew:
+  mcp:
+    host: localhost
+    port: 9090
   kanban:
     prefix: T
     ticket_types:

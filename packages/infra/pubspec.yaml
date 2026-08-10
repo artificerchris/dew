@@ -1,0 +1,22 @@
+name: dew_infra
+description: Infrastructure service management package for the Dew CLI.
+version: 0.4.2
+repository: https://github.com/artificerchris/dew
+issue_tracker: https://github.com/artificerchris/dew/issues
+resolution: workspace
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  args: ^2.7.0
+  dew_core: ^0.4.2
+  file: ^7.0.1
+  json_schema: ^5.2.2
+  path: ^1.9.0
+  podman: ^0.1.0
+  yaml: ^3.1.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

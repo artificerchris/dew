@@ -1,6 +1,10 @@
 library;
 
 export 'src/dew_vault_base.dart';
+export 'src/vault_config.dart';
+export 'src/vault_crypto.dart';
+export 'src/vault_generators.dart';
+export 'src/vault_store.dart';
 
 import 'package:dew_core/dew_core.dart';
 import 'package:file/file.dart';
@@ -14,6 +18,6 @@ void registerCommands(
   CommandRegistry registry, {
   FileSystem fs = const LocalFileSystem(),
 }) {
-  registry.register(VaultCommand());
+  registry.register(VaultCommand(fs: fs));
   registry.registerInitHook(VaultInitHook(fs: fs));
 }

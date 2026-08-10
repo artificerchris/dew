@@ -9,7 +9,7 @@ import '../ticket_store.dart';
 class BoardCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  BoardCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  BoardCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption('type', abbr: 't', help: 'Filter tickets to this type.')
       ..addOption('label', help: 'Filter tickets to this label.')

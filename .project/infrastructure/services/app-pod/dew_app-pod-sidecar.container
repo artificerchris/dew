@@ -1,0 +1,17 @@
+[Unit]
+Description=Dew sample pod sidecar container
+Requires=dew_app-pod.pod
+After=dew_app-pod.pod
+
+[Container]
+Image=docker.io/library/busybox:1.37
+ContainerName=dew_app-pod-sidecar
+Pod=dew_app-pod.pod
+Exec=sh -c "while true; do date; sleep 60; done"
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

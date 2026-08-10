@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://artificery.dev/dew/samples/rustfs/configure.schema.json",
+  "title": "RustFS Sample Configuration",
+  "description": "Configuration values represented by the sample RustFS Quadlets.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "api_port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 9000
+    },
+    "console_port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 9001
+    },
+    "access_key": {
+      "type": "string",
+      "minLength": 1,
+      "default": "rustfsadmin"
+    },
+    "volume": {
+      "type": "string",
+      "minLength": 1,
+      "default": "dew_rustfs_data"
+    }
+  }
+}

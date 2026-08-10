@@ -1,10 +1,15 @@
 # Changelog
 
-## 0.2.0 — 2026-05-02
+## 0.4.2 — 2026-05-08
 
-- Updated tests and fixtures for the generated config without unsupported MCP
-  `host` and `port` fields.
-- Bumped the `dew_core` dependency constraint to `^0.2.0`.
+- Add scaffold templating improvements, docs, and release polish.
+
+## 0.4.0 — 2026-05-05
+
+Release alignment for the `0.4.0` Dew package set.
+
+- Updated the `dew_core` dependency constraint for the infra release.
+- Applied analyzer fixes for current Dart lint recommendations.
 
 ## 0.1.0 — 2026-04-25
 

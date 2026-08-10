@@ -2,7 +2,8 @@
 
 MCP (Model Context Protocol) server package for the [Dew](https://github.com/artificerchris/dew) project management tool.
 
-Exposes all Dew kanban operations as MCP tools so AI assistants (GitHub Copilot, Claude, etc.) can manage your kanban board directly.
+Exposes Dew operations as MCP tools so AI assistants (GitHub Copilot, Claude,
+etc.) can manage your kanban board and project infrastructure directly.
 
 ## Usage
 

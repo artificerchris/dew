@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://artificery.dev/dew/samples/valkey-9/configure.schema.json",
+  "title": "Valkey 9 Sample Configuration",
+  "description": "Configuration values represented by the sample Valkey Quadlets.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "host_port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 6379
+    },
+    "volume": {
+      "type": "string",
+      "minLength": 1,
+      "default": "dew_valkey-9_data"
+    },
+    "snapshot_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 60
+    }
+  }
+}

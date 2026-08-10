@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://artificery.dev/dew/samples/keycloak/init.schema.json",
+  "title": "Keycloak Sample Initialization",
+  "description": "Initialization values for the sample Keycloak service.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "realm": {
+      "type": "string",
+      "minLength": 1,
+      "default": "dew"
+    }
+  }
+}

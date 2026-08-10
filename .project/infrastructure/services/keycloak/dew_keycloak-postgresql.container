@@ -1,0 +1,21 @@
+[Unit]
+Description=Dew sample Keycloak PostgreSQL
+Requires=dew_keycloak.network dew_keycloak-postgresql.volume
+After=dew_keycloak.network dew_keycloak-postgresql.volume
+
+[Container]
+Image=docker.io/library/postgres:18
+ContainerName=dew_keycloak-postgresql
+Network=dew_keycloak.network
+NetworkAlias=postgres
+Volume=dew_keycloak-postgresql.volume:/var/lib/postgresql
+Environment=POSTGRES_DB=keycloak
+Environment=POSTGRES_USER=keycloak
+Environment=POSTGRES_PASSWORD=keycloak_dev_password
+
+[Service]
+Restart=always
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

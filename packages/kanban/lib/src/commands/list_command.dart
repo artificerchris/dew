@@ -9,7 +9,7 @@ import '../ticket_store.dart';
 class ListCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  ListCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  ListCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption(
         'column',

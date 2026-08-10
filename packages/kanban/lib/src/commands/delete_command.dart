@@ -8,7 +8,7 @@ import '../ticket_store.dart';
 class DeleteCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  DeleteCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  DeleteCommand({this._fs = const LocalFileSystem()}) {
     argParser.addOption(
       'id',
       abbr: 'i',

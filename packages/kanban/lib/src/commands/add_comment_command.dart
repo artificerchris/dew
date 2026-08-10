@@ -8,7 +8,7 @@ import '../ticket_store.dart';
 class AddCommentCommand extends DewCommand with DewToolCommand {
   final FileSystem _fs;
 
-  AddCommentCommand({FileSystem fs = const LocalFileSystem()}) : _fs = fs {
+  AddCommentCommand({this._fs = const LocalFileSystem()}) {
     argParser
       ..addOption(
         'id',

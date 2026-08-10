@@ -1,0 +1,19 @@
+id: app-pod
+name: App Pod
+
+runtime:
+  type: podman-quadlet
+
+quadlets:
+  - file: dew_app-pod.pod
+    unit: dew_app-pod-pod.service
+  - file: dew_app-pod-web.container
+    unit: dew_app-pod-web.service
+    container_name: dew_app-pod-web
+  - file: dew_app-pod-sidecar.container
+    unit: dew_app-pod-sidecar.service
+    container_name: dew_app-pod-sidecar
+
+schemas:
+  configure: schemas/configure.schema.json
+  init: schemas/init.schema.json

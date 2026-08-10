@@ -1,0 +1,6 @@
+FROM docker.io/library/nginx:alpine
+
+RUN printf '{"service":"local-api-build","status":"ok"}\n' \
+  > /usr/share/nginx/html/index.html
+
+EXPOSE 80

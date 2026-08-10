@@ -7,13 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-05-02
+## [0.4.2] - 2026-05-08
 
-### Changed
+### Added in 0.4.2
 
-- Removed unsupported MCP `host` and `port` settings from generated `dew.yaml`.
-- Updated MCP configuration docs to reflect stdio-only client setup.
-- Added the `dew` executable mapping for pub activation.
+- Added layered scaffold templates for `dew init`, composed from Liquid parts.
+- Added scaffold completion and accompanying documentation.
+
+### Fixed in 0.4.2
+
+- Hardened scaffold merge behaviour so overlapping template layers combine
+  predictably.
+
+## [0.4.1] - 2026-05-05
+
+### Fixed in 0.4.1
+
+- Published a CLI patch release that restores the `dew` executable metadata for
+  `dart pub global activate dew`.
+
+## [0.4.0] - 2026-05-05
+
+### Added in 0.4.0
+
+- Added `dew infra` for project infrastructure service discovery, validation,
+  configuration payloads, initialization payloads, lifecycle control, status,
+  logs, and cleanup.
+- Added Podman Quadlet runtime support with a runtime boundary for future
+  container backends.
+- Added manifest, configure, and init JSON Schema handling for infrastructure
+  services.
+- Added sample infrastructure services for PostgreSQL 18, Valkey, RustFS,
+  Keycloak, pods, networks, volumes, and local image builds.
+- Exposed every `dew infra` CLI path through Dew MCP tools, including
+  path-specific configure/init tools.
+
+### Changed in 0.4.0
+
+- Extended MCP tool discovery so commands can provide extra path-specific tools
+  beyond one tool per subcommand.
+- Raised package versions to `0.4.0` for the infra release.
+- Cleaned existing analyzer info findings in kanban and vault ahead of release.
 
 ## [0.1.0] - 2026-04-25
 
@@ -94,6 +128,7 @@ Full set of kanban subcommands, each also registered as an MCP tool automaticall
 - `ProjectDirs` with injectable filesystem abstraction (`package:file`) for
   testable path resolution.
 
-[Unreleased]: https://github.com/artificerchris/dew/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/artificerchris/dew/compare/v0.1.0...v0.2.0
+[Unreleased]: https://github.com/artificerchris/dew/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/artificerchris/dew/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/artificerchris/dew/compare/v0.3.0...v0.4.0
 [0.1.0]: https://github.com/artificerchris/dew/releases/tag/v0.1.0

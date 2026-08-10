@@ -1,4 +1,3 @@
-import 'package:args/command_runner.dart';
 import 'package:dew_core/dew_core.dart';
 import 'package:file/memory.dart';
 import 'package:test/test.dart';
@@ -38,6 +37,9 @@ void main() {
   group('ProjectContext', () {
     const configYaml = '''
 dew:
+  mcp:
+    host: localhost
+    port: 9090
   kanban:
     prefix: TEST
     ticket_types:
@@ -57,7 +59,8 @@ dew:
       final ctx = await ProjectContext.find(fs: fs);
       final dew = ctx.config.raw['dew'];
       expect(dew['kanban']['prefix'], 'TEST');
-      expect(dew.containsKey('mcp'), isFalse);
+      expect(dew['mcp']['host'], 'localhost');
+      expect(dew['mcp']['port'], 9090);
     });
 
     test('find() locates config from a subdirectory', () async {
@@ -69,22 +72,25 @@ dew:
       final ctx = await ProjectContext.find(fs: fs, from: fs.directory('/sub'));
       expect(ctx.root, '/');
     });
-  });
 
-  group('InitCommand', () {
-    test('generates dew.yaml without MCP host or port config', () async {
+    test('resolveConfigPath resolves paths relative to .project/dew.yaml', () async {
       final fs = MemoryFileSystem();
-      final runner = CommandRunner<void>('dew', 'test');
-      runner.addCommand(InitCommand(const [], fs: fs));
+      fs.directory('/foo/.project').createSync(recursive: true);
+      fs.file('/foo/.project/dew.yaml').writeAsStringSync(configYaml);
 
-      await runner.run(['init', '--path', '/project']);
-
-      final config = fs.file('/project/.project/dew.yaml').readAsStringSync();
-      expect(config, contains('dew:'));
-      expect(config, contains('kanban:'));
-      expect(config, isNot(contains('mcp:')));
-      expect(config, isNot(contains('host:')));
-      expect(config, isNot(contains('port:')));
+      final ctx = await ProjectContext.find(fs: fs, from: fs.directory('/foo/.project/child'));
+      expect(
+        ctx.resolveConfigPath('vault'),
+        '/foo/.project/vault',
+      );
+      expect(
+        ctx.resolveConfigPath('.project/vault'),
+        '/foo/.project/vault',
+      );
+      expect(
+        ctx.resolveConfigPath('/tmp/abs'),
+        '/tmp/abs',
+      );
     });
   });
 }
