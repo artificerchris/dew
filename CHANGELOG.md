@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-05-08
+
+### Added in 0.4.2
+
+- Added layered scaffold templates for `dew init`, composed from Liquid parts.
+- Added scaffold completion and accompanying documentation.
+
+### Fixed in 0.4.2
+
+- Hardened scaffold merge behaviour so overlapping template layers combine
+  predictably.
+
 ## [0.4.1] - 2026-05-05
 
 ### Fixed in 0.4.1
