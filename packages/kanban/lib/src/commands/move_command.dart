@@ -30,6 +30,13 @@ class MoveCommand extends DewCommand with DewToolCommand {
   final String toolName = 'kanban_move_ticket';
 
   @override
+  String? get usageFooter => configuredUsageFooter(fs: _fs, columns: true);
+
+  @override
+  Map<String, dynamic> get toolInputSchema =>
+      withConfiguredEnums(super.toolInputSchema, fs: _fs, columns: true);
+
+  @override
   Future<String> callAsTool(Map<String, dynamic> args) async {
     final id = '${args['id']}'.toUpperCase();
     final column = '${args['column']}';

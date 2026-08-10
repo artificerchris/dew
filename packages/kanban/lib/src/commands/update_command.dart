@@ -12,7 +12,10 @@ class UpdateCommand extends DewCommand with DewToolCommand {
     argParser
       ..addOption('id', abbr: 'i', mandatory: true, help: 'Ticket ID.')
       ..addOption('title', abbr: 't', help: 'New title.')
-      ..addOption('type', help: 'New ticket type.')
+      ..addOption(
+        'type',
+        help: 'New ticket type. Must be one of the configured ticket_types.',
+      )
       ..addOption('column', abbr: 'c', help: 'New column.')
       ..addOption('body', abbr: 'b', help: 'New body (replaces existing body).')
       ..addMultiOption(
@@ -34,6 +37,18 @@ class UpdateCommand extends DewCommand with DewToolCommand {
 
   @override
   final String toolName = 'kanban_update_ticket';
+
+  @override
+  String? get usageFooter =>
+      configuredUsageFooter(fs: _fs, ticketTypes: true, columns: true);
+
+  @override
+  Map<String, dynamic> get toolInputSchema => withConfiguredEnums(
+    super.toolInputSchema,
+    fs: _fs,
+    ticketTypes: true,
+    columns: true,
+  );
 
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {

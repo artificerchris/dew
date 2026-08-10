@@ -1006,6 +1006,7 @@ class TuiCommand extends DewCommand {
           areaH: colAreaH,
           isSelected: isSelected,
           selectedIdx: isSelected ? ticketIdx : -1,
+          ticketTypes: config.ticketTypes,
         ),
       );
     }
@@ -1045,6 +1046,7 @@ class TuiCommand extends DewCommand {
     required int areaH,
     required bool isSelected,
     required int selectedIdx,
+    required List<TicketTypeConfig> ticketTypes,
   }) {
     final cells = <_Cell>[];
     final color = _colColor(col.color);
@@ -1109,6 +1111,7 @@ class TuiCommand extends DewCommand {
         tickets[ti],
         innerW,
         ti == selectedIdx && isSelected,
+        ticketTypes,
       );
     }
 
@@ -1169,11 +1172,12 @@ class TuiCommand extends DewCommand {
     Ticket ticket,
     int innerW,
     bool isSel,
+    List<TicketTypeConfig> ticketTypes,
   ) {
     final bg = isSel ? ConsoleColor.blue : null;
     final titleFg = isSel ? ConsoleColor.brightWhite : null;
     final bullet = isSel ? '▶' : ' ';
-    final typeColor = _typeColor(ticket.type);
+    final typeColor = _typeColor(ticket.type, ticketTypes);
 
     // Row 1: bullet + ID + type badge
     final badge = ' [${_trunc(ticket.type, 7)}]';
@@ -1488,7 +1492,25 @@ class TuiCommand extends DewCommand {
     _ => ConsoleColor.cyan,
   };
 
-  static ConsoleColor _typeColor(String type) => switch (type.toLowerCase()) {
+  /// Badge color for [type], preferring the `color` declared on its
+  /// `ticket_types` entry and falling back to [_defaultTypeColor].
+  static ConsoleColor _typeColor(
+    String type,
+    List<TicketTypeConfig> ticketTypes,
+  ) {
+    final needle = type.toLowerCase();
+    for (final t in ticketTypes) {
+      if (t.id.toLowerCase() != needle) continue;
+      final color = t.color;
+      if (color != null && color.isNotEmpty) return _colColor(color);
+      break;
+    }
+    return _defaultTypeColor(needle);
+  }
+
+  /// Palette for types that declare no `color` in config, so existing boards
+  /// keep their familiar badge colors without editing dew.yaml.
+  static ConsoleColor _defaultTypeColor(String type) => switch (type) {
     'bug' => ConsoleColor.red,
     'task' => ConsoleColor.blue,
     'feature' || 'feat' => ConsoleColor.green,

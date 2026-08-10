@@ -101,13 +101,45 @@ class ProjectContext {
       dir = parent;
     }
   }
+
+  /// Synchronous, non-throwing variant of [find]. Returns `null` when no
+  /// project is found or its config cannot be parsed.
+  ///
+  /// Exists for callers that need config outside an async boundary and must
+  /// degrade gracefully — CLI usage text and MCP tool schemas are built before
+  /// (or without) a project context, and neither may fail on a broken config.
+  static ProjectContext? findSync({
+    FileSystem fs = const LocalFileSystem(),
+    Directory? from,
+  }) {
+    var dir = from ?? fs.currentDirectory;
+    while (true) {
+      final configFile = fs.file(p.join(dir.path, '.project', 'dew.yaml'));
+      if (configFile.existsSync()) {
+        try {
+          final yaml = loadYaml(configFile.readAsStringSync());
+          if (yaml is! YamlMap) return null;
+          return ProjectContext(
+            root: dir.path,
+            config: DewConfig.fromYaml(yaml),
+            fs: fs,
+            configFilePath: configFile.path,
+          );
+        } catch (_) {
+          return null;
+        }
+      }
+      final parent = dir.parent;
+      if (parent.path == dir.path) return null;
+      dir = parent;
+    }
+  }
 }
 
 String _expandTilde(String input) {
   if (!input.startsWith('~')) return input;
-  final home = Platform.environment['HOME'] ??
-      Platform.environment['USERPROFILE'] ??
-      '';
+  final home =
+      Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
   if (home.isEmpty) return input;
   if (input.length == 1) return home;
   final rest = input.substring(1);

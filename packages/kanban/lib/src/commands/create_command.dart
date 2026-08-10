@@ -14,7 +14,7 @@ class CreateCommand extends DewCommand with DewToolCommand {
       ..addOption(
         'type',
         mandatory: true,
-        help: 'Ticket type (e.g. task, bug).',
+        help: 'Ticket type. Must be one of the configured ticket_types.',
       )
       ..addOption(
         'column',
@@ -37,6 +37,18 @@ class CreateCommand extends DewCommand with DewToolCommand {
 
   @override
   final String toolName = 'kanban_create_ticket';
+
+  @override
+  String? get usageFooter =>
+      configuredUsageFooter(fs: _fs, ticketTypes: true, columns: true);
+
+  @override
+  Map<String, dynamic> get toolInputSchema => withConfiguredEnums(
+    super.toolInputSchema,
+    fs: _fs,
+    ticketTypes: true,
+    columns: true,
+  );
 
   @override
   Future<String> callAsTool(Map<String, dynamic> args) async {

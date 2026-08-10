@@ -118,6 +118,78 @@ void main() {
       expect(required, containsAll(['title', 'type']));
     });
 
+    test('create/update type schema enumerates configured ticket types', () {
+      final fs = _makeFs();
+      fs.file('/.project/dew.yaml').writeAsStringSync('''
+dew:
+  kanban:
+    prefix: T
+    ticket_types:
+      - id: task
+        name: Task
+      - id: feedback
+        name: Feedback
+    columns:
+      - id: todo
+        name: To Do
+        color: blue
+''');
+      final registry = CommandRegistry();
+      registerCommands(registry, fs: fs);
+      final tools = {for (final t in registry.mcpTools) t.name: t};
+
+      for (final name in ['kanban_create_ticket', 'kanban_update_ticket']) {
+        final properties =
+            tools[name]!.inputSchema['properties'] as Map<String, dynamic>;
+        final type = properties['type'] as Map<String, dynamic>;
+        expect(type['enum'], ['task', 'feedback'], reason: name);
+      }
+    });
+
+    test('create/update/move column schema enumerates configured columns', () {
+      final fs = _makeFs();
+      final registry = CommandRegistry();
+      registerCommands(registry, fs: fs);
+      final tools = {for (final t in registry.mcpTools) t.name: t};
+
+      for (final name in [
+        'kanban_create_ticket',
+        'kanban_update_ticket',
+        'kanban_move_ticket',
+      ]) {
+        final properties =
+            tools[name]!.inputSchema['properties'] as Map<String, dynamic>;
+        final column = properties['column'] as Map<String, dynamic>;
+        expect(column['enum'], ['todo'], reason: name);
+      }
+    });
+
+    test('move schema constrains column but has no type property', () {
+      final registry = CommandRegistry();
+      registerCommands(registry, fs: _makeFs());
+      final move = registry.mcpTools.firstWhere(
+        (t) => t.name == 'kanban_move_ticket',
+      );
+      final properties = move.inputSchema['properties'] as Map<String, dynamic>;
+      expect(properties.containsKey('type'), isFalse);
+      expect((properties['column'] as Map)['enum'], ['todo']);
+    });
+
+    test('schemas omit enums when there is no readable config', () {
+      final registry = CommandRegistry();
+      registerCommands(registry, fs: MemoryFileSystem());
+      final create = registry.mcpTools.firstWhere(
+        (t) => t.name == 'kanban_create_ticket',
+      );
+      final properties =
+          create.inputSchema['properties'] as Map<String, dynamic>;
+      for (final name in ['type', 'column']) {
+        final prop = properties[name] as Map<String, dynamic>;
+        expect(prop.containsKey('enum'), isFalse, reason: name);
+        expect(prop['type'], 'string', reason: name);
+      }
+    });
+
     test('create and list tools have working handlers', () async {
       final fs = _makeFs();
       final registry = CommandRegistry();
@@ -156,6 +228,64 @@ void main() {
       expect(statsResult, contains('Total: 1'));
       expect(statsResult, contains('todo: 1'));
       expect(statsResult, contains('task: 1'));
+    });
+  });
+
+  group('TicketTypeConfig color', () {
+    test('parses an optional color and leaves it null when absent', () {
+      final fs = MemoryFileSystem();
+      fs.directory('/.project').createSync(recursive: true);
+      fs.file('/.project/dew.yaml').writeAsStringSync('''
+dew:
+  kanban:
+    prefix: T
+    ticket_types:
+      - id: bug
+        name: Bug
+        color: brightRed
+      - id: task
+        name: Task
+    columns:
+      - id: todo
+        name: To Do
+        color: blue
+''');
+      final config = ProjectContext.findSync(fs: fs)!.config.kanban;
+      expect(config.ticketTypes[0].color, 'brightRed');
+      expect(config.ticketTypes[1].color, isNull);
+    });
+  });
+
+  group('ticket type discovery in usage text', () {
+    test('create/update usage lists configured ticket types', () {
+      final fs = _makeFs();
+      final registry = CommandRegistry();
+      registerCommands(registry, fs: fs);
+      final kanban = registry.commands.firstWhere((c) => c.name == 'kanban');
+
+      for (final name in ['create', 'update']) {
+        final footer = kanban.subcommands[name]!.usageFooter;
+        expect(footer, contains('Configured ticket types: task'), reason: name);
+        expect(footer, contains('Configured columns: todo'), reason: name);
+      }
+    });
+
+    test('move usage lists columns only', () {
+      final registry = CommandRegistry();
+      registerCommands(registry, fs: _makeFs());
+      final kanban = registry.commands.firstWhere((c) => c.name == 'kanban');
+      final footer = kanban.subcommands['move']!.usageFooter;
+      expect(footer, contains('Configured columns: todo'));
+      expect(footer, isNot(contains('Configured ticket types')));
+    });
+
+    test('usage omits the footer outside a project', () {
+      final registry = CommandRegistry();
+      registerCommands(registry, fs: MemoryFileSystem());
+      final kanban = registry.commands.firstWhere((c) => c.name == 'kanban');
+      for (final name in ['create', 'update', 'move']) {
+        expect(kanban.subcommands[name]!.usageFooter, isNull, reason: name);
+      }
     });
   });
 
